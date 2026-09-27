@@ -1,0 +1,19 @@
+# A tiny version of the real dataset, built by the smoke test to check the
+# whole pipeline (download, cleaning, tokenizer, shards, upload) quickly.
+name: smoke-data
+seed: 1234
+source:
+  kind: hf_parquet
+  repo: HuggingFaceFW/fineweb-edu
+  pattern: sample/10BT/*.parquet
+  num_files: 1
+tokenizer:
+  vocab_size: 16384
+  train_chars: 30_000_000
+  compare_vocab_sizes: [8192, 16384]
+  compare_train_chars: 10_000_000
+  compare_eval_docs: 300
+train_tokens: 20_000_000
+val_fraction: 0.01
+max_val_tokens: 1_000_000
+shard_tokens: 5_000_000

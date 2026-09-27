@@ -1,0 +1,19 @@
+# The main token dataset. Built once on a Kaggle CPU session (free, no GPU hours).
+# About 2.6B training tokens = 5.2 GB of uint16 shards on the Hugging Face Hub.
+name: fineweb-edu-16k
+seed: 1234
+source:
+  kind: hf_parquet
+  repo: HuggingFaceFW/fineweb-edu
+  pattern: sample/10BT/*.parquet
+  num_files: 5            # 5 x 2.15 GB files, about 3.6M documents (more than we need)
+tokenizer:
+  vocab_size: 16384
+  train_chars: 1_000_000_000
+  compare_vocab_sizes: [8192, 16384, 32768]
+  compare_train_chars: 200_000_000
+  compare_eval_docs: 2000
+train_tokens: 2_600_000_000   # enough for a compute-optimal ~100M model without repeats
+val_fraction: 0.005
+max_val_tokens: 20_000_000
+shard_tokens: 100_000_000
