@@ -19,23 +19,28 @@ from gptlab import distributed as du
 
 def main() -> None:
     info = du.setup()
-    n_bytes = 256 * 2**20
+    n_bytes = 256 * 2**20 if info.device_type == "cuda" else 4 * 2**20  # small on CPU (tests)
     x = torch.ones(n_bytes // 4, device=info.device)
+
+    def sync():
+        if info.device_type == "cuda":
+            torch.cuda.synchronize(info.device)
+
     for _ in range(2):  # warm up
         dist.all_reduce(x)
-    torch.cuda.synchronize(info.device)
+    sync()
     reps = 5
     t0 = time.perf_counter()
     for _ in range(reps):
         dist.all_reduce(x)
-    torch.cuda.synchronize(info.device)
+    sync()
     dt = (time.perf_counter() - t0) / reps
     n = info.world_size
     # "Bus bandwidth": data each GPU sends and receives in a ring all-reduce.
     bus_gbps = 2 * (n - 1) / n * n_bytes / dt / 1e9
     if info.is_main:
-        print(json.dumps({"ddp_ok": True, "world_size": n, "allreduce_256mb_ms": 1000 * dt, "bus_gb_per_s": bus_gbps}),
-              flush=True)
+        print(json.dumps({"ddp_ok": True, "world_size": n, "tensor_mb": n_bytes / 2**20, "allreduce_ms": 1000 * dt,
+                          "bus_gb_per_s": bus_gbps}), flush=True)
     du.cleanup()
 
 

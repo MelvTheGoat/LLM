@@ -175,3 +175,17 @@ def test_smoke_job_on_cpu(tmp_path):
     assert (clone / "results" / "smoke" / "bench" / "bench.json").exists()
     assert (clone / "results" / "smoke" / "data" / "manifest.json").exists()
     assert (tmp_path / "store" / "checkpoints" / "smoke" / "resume" / "final" / "model.pt").exists()
+
+
+@pytest.mark.slow
+def test_ddp_check_prints_a_result_line():
+    import os
+    import sys
+
+    env = dict(os.environ, PYTHONPATH=str(ROOT), CUDA_VISIBLE_DEVICES="")
+    p = subprocess.run([sys.executable, "-m", "torch.distributed.run", "--standalone", "--nproc_per_node=2",
+                        "-m", "gptlab.runner.ddp_check"], env=env, cwd=ROOT, capture_output=True, text=True,
+                       timeout=300)
+    line = [x for x in p.stdout.splitlines() if x.startswith("{")][-1]
+    result = json.loads(line)
+    assert result["ddp_ok"] and result["world_size"] == 2 and result["bus_gb_per_s"] > 0
