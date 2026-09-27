@@ -21,6 +21,7 @@ import argparse
 import json
 import os
 import shutil
+import signal
 import subprocess
 import sys
 import threading
@@ -617,19 +618,25 @@ def check_ddp(ctx: Context) -> None:
     for extra in [{}, {"NCCL_P2P_DISABLE": "1"}]:
         ctx.extra_env = dict(extra)
         cmd = ctx.launcher(["-m", "gptlab.runner.ddp_check"])
+        # A new process group, so on a hang we can kill torchrun *and* its workers.
+        proc = subprocess.Popen(cmd, cwd=ctx.repo_root, env=ctx.child_env(), stdout=subprocess.PIPE,
+                                stderr=subprocess.STDOUT, text=True, start_new_session=True)
         try:
-            p = subprocess.run(cmd, cwd=ctx.repo_root, env=ctx.child_env(), capture_output=True, text=True,
-                               timeout=240)
-            for line in p.stdout.splitlines()[::-1]:
-                if line.startswith("{"):
-                    result = json.loads(line)
-                    result["nccl_env"] = extra
-                    ctx.session_info["ddp_check"] = result
-                    say(f"DDP check passed with {extra or 'default settings'}: {result}")
-                    return
-            log.write_text(p.stdout + p.stderr)
+            out, _ = proc.communicate(timeout=240)
         except subprocess.TimeoutExpired:
+            os.killpg(proc.pid, signal.SIGKILL)
+            proc.communicate()
             say(f"DDP check timed out with {extra or 'default settings'}")
+            continue
+        for line in out.splitlines()[::-1]:
+            if line.startswith("{"):
+                result = json.loads(line)
+                result["nccl_env"] = extra
+                ctx.session_info["ddp_check"] = result
+                say(f"DDP check passed with {extra or 'default settings'}: {result}")
+                return
+        log.write_text(out)
+        say(f"DDP check failed with {extra or 'default settings'} (see {log})")
     say("warning: multi-GPU communication does not work here; using 1 GPU")
     ctx.extra_env = {}
     ctx.n_gpus = 1
