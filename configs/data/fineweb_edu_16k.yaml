@@ -6,7 +6,7 @@ source:
   kind: hf_parquet
   repo: HuggingFaceFW/fineweb-edu
   pattern: sample/10BT/*.parquet
-  num_files: 5            # 5 x 2.15 GB files, about 3.6M documents (more than we need)
+  num_files: 4            # 4 x 2.15 GB files, about 2.9M documents (~20% more than we need)
 tokenizer:
   vocab_size: 16384
   train_chars: 1_000_000_000

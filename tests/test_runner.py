@@ -131,3 +131,47 @@ def test_copy_tail(tmp_path):
     text = dst.read_text()
     assert text.startswith("[... earlier output cut ...]\nline ")
     assert text.endswith("line 99999\n") and len(text) < 0.02 * 2**20
+
+
+@pytest.mark.slow
+def test_smoke_job_on_cpu(tmp_path):
+    """The smoke job's code path, with local data and a tiny model instead of FineWeb and GPUs."""
+    remote = tmp_path / "remote.git"
+    subprocess.run(["git", "init", "-q", "--bare", str(remote)], check=True)
+    data_cfg = write_yaml(tmp_path / "data.yaml", {
+        "name": "smoke-data-test",
+        "source": {"kind": "jsonl", "path": str(ROOT / "tests" / "data" / "sample_docs.jsonl")},
+        "tokenizer": {"vocab_size": 512, "compare_vocab_sizes": [400], "train_chars": 10**9},
+        "train_tokens": 10**9, "val_fraction": 0.1, "shard_tokens": 20000, "workers": 1,
+    })
+    train_cfg = write_yaml(tmp_path / "train.yaml", {
+        "name": "smoke-train-test",
+        "model": {"vocab_size": 512, "seq_len": 32, "n_layer": 2, "n_head": 2, "d_model": 32},
+        "data": {"name": "smoke-data-test"},
+        "train": {"max_steps": 6, "global_batch_tokens": 128, "micro_batch_size": 4, "precision": "fp32",
+                  "ckpt_interval_steps": 2},
+        "eval": {"interval": 3, "tokens": 256, "final_tokens": 256, "hellaswag": False, "sample_tokens": 4},
+    })
+    bench_cfg = write_yaml(tmp_path / "bench.yaml", {
+        "name": "b", "base_model": {"vocab_size": 128, "seq_len": 16},
+        "models": {"t": {"d_model": 32, "n_layer": 1, "n_head": 2}},
+        "cases": [{"model": "t", "precision": "fp32", "micro_batch_size": 2}], "warmup_steps": 1, "timed_steps": 2,
+    })
+    spec = write_yaml(tmp_path / "smoke.yaml", {"data_config": str(data_cfg), "train_config": str(train_cfg),
+                                                "bench_config": str(bench_cfg), "stop_after_steps": 3})
+    queue = write_yaml(tmp_path / "queue.yaml", {
+        "jobs": [{"name": "smoke", "kind": "smoke", "config": str(spec), "hardware": "cpu"}],
+    })
+    session(tmp_path, str(remote), queue, 1)
+    clone, st = read_results(tmp_path, str(remote), 1)
+    report = json.loads((clone / "results" / "smoke" / "smoke_report.json").read_text())
+    assert st["smoke"]["state"] == "done", report
+    resume = report["steps"]["resume"]
+    assert resume["steps"] == 6 and resume["resumed_at"] == 3
+    assert resume["identical_after_resume"]  # CPU is deterministic, so the resume must be exact
+    assert resume["max_diff_straight_vs_straight2"] == 0.0
+    for sub in ["straight", "straight2", "resume"]:
+        assert (clone / "results" / "smoke" / sub / "metrics.jsonl").exists()
+    assert (clone / "results" / "smoke" / "bench" / "bench.json").exists()
+    assert (clone / "results" / "smoke" / "data" / "manifest.json").exists()
+    assert (tmp_path / "store" / "checkpoints" / "smoke" / "resume" / "final" / "model.pt").exists()

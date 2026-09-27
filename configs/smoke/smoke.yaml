@@ -1,0 +1,5 @@
+# What the smoke job runs (see run_smoke in gptlab/runner/run.py).
+data_config: configs/data/smoke.yaml
+train_config: configs/smoke/train.yaml
+bench_config: configs/bench/smoke.yaml
+stop_after_steps: 100   # the interrupted run stops here, then resumes from the Hub copy

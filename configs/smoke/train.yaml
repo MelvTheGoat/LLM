@@ -1,0 +1,31 @@
+# A small model trained by the smoke test on the tiny smoke dataset. It checks
+# DDP on 2 GPUs, fp16 with the loss scaler, checkpoints, resume from the Hub,
+# evaluation (HellaSwag, samples) and log pushing. It is not an experiment.
+name: smoke-train
+notes: pipeline check only
+seed: 1337
+model:
+  vocab_size: 16384
+  seq_len: 512
+  n_layer: 4
+  n_head: 4
+  d_model: 256
+data:
+  name: smoke-data
+train:
+  max_steps: 200
+  global_batch_tokens: 65536   # 2 GPUs x 16 sequences x 512 tokens x 4 accumulation steps
+  micro_batch_size: 16
+  lr: 1.0e-3
+  warmup_steps: 20
+  precision: fp16
+  compile: false
+  print_interval: 10
+  debug_interval: 50
+  ckpt_interval_steps: 50
+eval:
+  interval: 50
+  tokens: 262144
+  final_tokens: 1000000
+  hellaswag: true
+  hellaswag_limit: 2000

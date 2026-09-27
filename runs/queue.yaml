@@ -1,0 +1,28 @@
+# The Kaggle runner works through these jobs in order.
+# - It skips jobs that are done, running in another session, or waiting for
+#   another job, and jobs that need a different kind of session (gpu / cpu).
+# - Job names are permanent: they name the folder on the `results` branch and
+#   on the Hugging Face Hub. Never reuse a name for a different experiment.
+# Status of every job: see results/<job>/status.json on the `results` branch.
+
+settings:
+  session_hours: 11        # stop cleanly this long after the notebook started
+  stop_margin_minutes: 20  # training stops this long before that, to save and upload
+  hf_data_repo: gptlab-data
+  hf_ckpt_repo: gptlab-checkpoints
+  hf_private: false
+
+jobs:
+  # 1. Check the whole pipeline end to end and measure speed (GPU T4 x2, ~1 hour).
+  - name: smoke
+    kind: smoke
+    config: configs/smoke/smoke.yaml
+    hardware: gpu
+
+  # 2. Build the real token dataset (CPU session: free, no GPU hours; ~1-3 hours).
+  - name: data-fineweb-edu-16k
+    kind: data
+    config: configs/data/fineweb_edu_16k.yaml
+    hardware: cpu
+
+  # Experiments are added here after the smoke test (see EXPERIMENTS.md).
