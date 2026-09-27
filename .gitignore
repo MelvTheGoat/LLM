@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.venv/
+
+# Local data, checkpoints and run outputs. These are too big for git.
+# Token data and checkpoints live on Hugging Face Hub.
+/data/
+/out/
+/work/
+*.bin
+*.pt
+*.safetensors
+
+# Editors and OS
+.vscode/
+.idea/
+.DS_Store
+

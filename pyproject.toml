@@ -1,0 +1,15 @@
+[project]
+name = "gptlab"
+version = "0.1.0"
+description = "A small GPT trained from scratch, with scaling, ablation, stability and efficiency experiments."
+requires-python = ">=3.10"
+
+[tool.setuptools]
+packages = ["gptlab", "gptlab.data", "gptlab.runner"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+markers = [
+    "slow: tests that take more than a few seconds (multi-process DDP, full pipeline)",
+]

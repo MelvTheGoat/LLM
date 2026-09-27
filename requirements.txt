@@ -1,0 +1,10 @@
+# Core libraries. Kaggle already has most of these installed.
+# torch is not pinned so Kaggle keeps its own CUDA build.
+torch>=2.3
+numpy
+pyyaml
+tokenizers>=0.19
+huggingface_hub>=0.25
+pyarrow
+matplotlib
+pytest
