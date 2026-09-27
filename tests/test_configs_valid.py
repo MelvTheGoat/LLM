@@ -36,3 +36,13 @@ def test_queue_loads_and_smoke_spec_points_to_real_files():
             for key in ["data_config", "train_config", "bench_config"]:
                 assert (ROOT / spec[key]).exists(), spec[key]
             assert int(spec["stop_after_steps"]) > 0
+
+
+def test_kaggle_notebook_is_valid_and_starts_the_runner():
+    import json
+
+    nb = json.loads((ROOT / "kaggle" / "runner.ipynb").read_text())
+    code = "".join(c for cell in nb["cells"] if cell["cell_type"] == "code" for c in cell["source"])
+    compile(code, "runner.ipynb", "exec")
+    assert "gptlab.runner" in code and "SESSION_START" in code
+    assert 'BRANCH = "main"' in code
