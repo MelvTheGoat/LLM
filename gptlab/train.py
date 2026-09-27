@@ -53,6 +53,7 @@ from gptlab.checkpoint import (
     save_checkpoint,
     save_final_weights,
     set_rng_state,
+    step_dir_name,
 )
 from gptlab.config import RunConfig, load_config, save_config, to_dict
 from gptlab.data.loader import TrainStream, ValData, resolve_data_dir
@@ -366,7 +367,8 @@ def train(
             t_last = time.perf_counter()  # eval/debug/checkpoint time is not counted as step time
 
         if step >= total_steps and final_state == "running":
-            if not (ckpt_root / f"step_{step:07d}").exists():
+            need_ckpt = is_main and not (ckpt_root / step_dir_name(step)).exists()
+            if du.broadcast_flag(need_ckpt, dev):  # one decision for all processes
                 checkpoint(step)
             if is_main:
                 save_final_weights(out_dir, raw_model, {"step": step, "tokens": step * tc.global_batch_tokens,

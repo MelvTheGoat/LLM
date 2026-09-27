@@ -86,18 +86,22 @@ def final_evaluation(model, cfg: RunConfig, data_dir: Path, device, autocast_ctx
     result = evaluate_val(model, val, cfg.eval.final_tokens, micro, device, autocast_ctx, tok.token_bytes(), rank, world_size)
     log(f"final val loss {result['val_loss']:.4f}  ppl {result['val_ppl']:.2f}  bpb {result.get('val_bpb', float('nan')):.4f}")
     if cfg.eval.hellaswag:
-        try:
-            path = Path(hellaswag_path) if hellaswag_path else default_hellaswag_path()
-            if rank == 0:
+        path = Path(hellaswag_path) if hellaswag_path else default_hellaswag_path()
+        error = None
+        if rank == 0:
+            try:
                 ensure_file(path)
-            du.barrier()
+            except Exception as e:  # no internet, for example; do not lose the rest
+                error = repr(e)
+        # Rank 0 tells everyone whether the file is there, so no process waits forever.
+        if du.broadcast_flag(error is None, device):
             examples = load_examples(path, cfg.eval.hellaswag_limit)
             hs = evaluate_hellaswag(model, tok, examples, device, autocast_ctx, rank, world_size)
             result.update(hs)
             log(f"hellaswag acc {hs['hellaswag_acc']:.4f}  acc_norm {hs['hellaswag_acc_norm']:.4f}  (n={hs['hellaswag_n']}, chance 0.25)")
-        except Exception as e:  # no internet, for example; do not lose the rest
-            result["hellaswag_error"] = repr(e)
-            log(f"hellaswag skipped: {e!r}")
+        else:
+            result["hellaswag_error"] = error or "download failed on rank 0"
+            log(f"hellaswag skipped: {result['hellaswag_error']}")
     if rank == 0 and cfg.eval.sample_prompts:
         result["samples"] = sample_texts(model, tok, cfg.eval.sample_prompts, cfg.eval.sample_tokens, device, autocast_ctx, seed=cfg.seed)
     return result

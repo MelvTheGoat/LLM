@@ -47,11 +47,11 @@ def setup(device: str | None = None) -> DistInfo:
     if world > 1 and not dist.is_initialized():
         # A long timeout: rank 0 may be busy saving a checkpoint or running the
         # final evaluation while the others wait at a barrier.
-        dist.init_process_group(
-            backend="nccl" if use_cuda else "gloo",
-            timeout=timedelta(minutes=30),
-            device_id=dev if use_cuda else None,
-        )
+        kwargs = dict(backend="nccl" if use_cuda else "gloo", timeout=timedelta(minutes=30))
+        try:
+            dist.init_process_group(**kwargs, device_id=dev if use_cuda else None)
+        except TypeError:  # PyTorch older than 2.3 has no device_id argument
+            dist.init_process_group(**kwargs)
     return DistInfo(rank, local_rank, world, dev)
 
 
