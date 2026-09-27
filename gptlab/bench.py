@@ -160,8 +160,12 @@ def find_micro_batch(mcfg, precision, device, max_micro: int) -> int:
     return 0
 
 
-def run_case(bcfg: BenchConfig, case: BenchCase, info: du.DistInfo) -> dict | None:
-    """Run one case. Returns the result on rank 0, None on other ranks."""
+def run_case(bcfg: BenchConfig, case: BenchCase, info: du.DistInfo, fit_cache: dict | None = None) -> dict | None:
+    """Run one case. Returns the result on rank 0, None on other ranks.
+
+    `fit_cache` remembers the largest micro-batch found per (model, precision),
+    so the memory search runs once even when several cases share a model.
+    """
     mcfg = bcfg.model_config(case.model)
     world = case.world_size or info.world_size
     if world not in (1, info.world_size):
@@ -173,12 +177,17 @@ def run_case(bcfg: BenchConfig, case: BenchCase, info: du.DistInfo) -> dict | No
                   d_model=mcfg.d_model, n_layer=mcfg.n_layer, seq_len=mcfg.seq_len)
 
     micro = case.micro_batch_size
-    if micro == 0:
+    key = (case.model, case.precision)
+    if micro == 0 and fit_cache is not None and key in fit_cache:
+        micro = fit_cache[key]
+    elif micro == 0:
         found = find_micro_batch(mcfg, case.precision, info.device, bcfg.max_micro_batch) if participates else 10**6
         t = torch.tensor([found], device=info.device)
         if info.world_size > 1:
             torch.distributed.all_reduce(t, op=torch.distributed.ReduceOp.MIN)
         micro = int(t.item())
+        if fit_cache is not None:
+            fit_cache[key] = micro
     result["micro_batch_size"] = micro
     if micro == 0:
         result["status"] = "oom"
@@ -241,8 +250,9 @@ def run_bench(bcfg: BenchConfig, out_dir: str | Path, device: str | None = None,
         out_dir.mkdir(parents=True, exist_ok=True)
     results = []
     env = {"torch": torch.__version__, "cuda": torch.version.cuda, "world_size": info.world_size}
+    fit_cache: dict = {}
     for case in bcfg.all_cases():
-        r = run_case(bcfg, case, info)
+        r = run_case(bcfg, case, info, fit_cache)
         if info.is_main:
             results.append(r)
             with open(out_dir / "bench.json", "w") as f:
