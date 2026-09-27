@@ -1,0 +1,34 @@
+# Throughput of the candidate scaling-ladder models on Kaggle's 2x T4.
+# The compute budget in EXPERIMENTS.md is based on these numbers.
+name: bench-smoke
+base_model:
+  vocab_size: 16384
+  seq_len: 1024
+  pos_encoding: rope
+  norm: rmsnorm
+  mlp: swiglu
+  tie_weights: true
+models:                      # head size 64 everywhere
+  s1: {d_model: 128, n_layer: 4, n_head: 2}
+  s2: {d_model: 256, n_layer: 6, n_head: 4}
+  s3: {d_model: 384, n_layer: 8, n_head: 6}
+  s4: {d_model: 512, n_layer: 8, n_head: 8}
+  s5: {d_model: 640, n_layer: 10, n_head: 10}
+  s6: {d_model: 768, n_layer: 12, n_head: 12}
+grid:
+  # Every size, fp16 on both GPUs, with and without torch.compile.
+  - model: [s1, s2, s3, s4, s5, s6]
+    precision: fp16
+    compile: [false, true]
+  # A first look at the efficiency questions on one mid-size model:
+  # fp32 vs fp16, and 1 GPU vs 2 GPUs.
+  - model: s4
+    precision: fp32
+    compile: false
+  - model: s4
+    precision: fp16
+    compile: false
+    world_size: 1
+warmup_steps: 3
+timed_steps: 10
+max_micro_batch: 64

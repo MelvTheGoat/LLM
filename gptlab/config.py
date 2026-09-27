@@ -221,7 +221,7 @@ def _coerce(value: Any, hint: Any, key: str) -> Any:
         (inner,) = args or (Any,)
         return [_coerce(v, inner, f"{key}[{i}]") for i, v in enumerate(value)]
 
-    if origin is dict:
+    if origin is dict or hint is dict:
         if not isinstance(value, dict):
             raise ConfigError(f"{key} must be a mapping")
         return dict(value)
