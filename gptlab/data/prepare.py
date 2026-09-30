@@ -25,8 +25,12 @@ import json
 import multiprocessing as mp
 import os
 import platform
-import sys
+import threading
 import time
+from collections import deque
+from concurrent.futures import ProcessPoolExecutor
+from concurrent.futures import TimeoutError as FuturesTimeout
+from concurrent.futures.process import BrokenProcessPool
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -62,6 +66,7 @@ class DataPrepConfig:
     shard_tokens: int = 100_000_000  # tokens per shard file (200 MB)
     workers: int = 0  # worker processes; 0 means one per CPU core
     batch_docs: int = 256  # documents per work item
+    batch_timeout_seconds: float = 900.0  # a worker slower than this on one batch is treated as stuck
 
 
 def load_data_config(path: str | Path, overrides: list[str] | None = None) -> DataPrepConfig:
@@ -122,7 +127,15 @@ def _batches(docs, size: int):
 
 
 def _processed(source: DocSource, cfg: DataPrepConfig, tokenizer_path: str | None):
-    """Yield processed documents in stream order, using worker processes if asked."""
+    """Yield processed documents in stream order, using worker processes if asked.
+
+    Workers are started with "spawn" (a fresh Python process), not "fork". A
+    forked process copies only the thread that called fork. If another thread
+    held a lock at that moment (for example the Hugging Face download engine,
+    which keeps background threads alive), the copy can hang forever. That
+    happened in the first Kaggle smoke run. A worker that dies or gets stuck now
+    raises an error instead of hanging.
+    """
     batches = _batches(source.iter_documents(cfg.seed), cfg.batch_docs)
     workers = cfg.workers or os.cpu_count() or 1
     if workers <= 1:
@@ -130,11 +143,35 @@ def _processed(source: DocSource, cfg: DataPrepConfig, tokenizer_path: str | Non
         for b in batches:
             yield from _process_batch(b)
         return
-    ctx = mp.get_context("fork" if sys.platform.startswith("linux") else "spawn")
-    with ctx.Pool(workers, initializer=_init_worker, initargs=(cfg.clean, tokenizer_path)) as pool:
-        # imap keeps the input order, so the output does not depend on the worker count.
-        for result in pool.imap(_process_batch, batches, chunksize=1):
-            yield from result
+    pool = ProcessPoolExecutor(workers, mp_context=mp.get_context("spawn"), initializer=_init_worker,
+                               initargs=(cfg.clean, tokenizer_path))
+    pending: deque = deque()
+    finished = False
+
+    def result(future):
+        try:
+            return future.result(timeout=cfg.batch_timeout_seconds)
+        except FuturesTimeout:
+            raise RuntimeError(f"a data worker spent over {cfg.batch_timeout_seconds:.0f}s on one batch; it looks stuck")
+        except BrokenProcessPool as e:
+            raise RuntimeError(f"a data worker process died: {e}") from e
+
+    try:
+        for b in batches:
+            pending.append(pool.submit(_process_batch, b))
+            if len(pending) >= 2 * workers:  # keep a few batches in flight, in order
+                yield from result(pending.popleft())
+        while pending:
+            yield from result(pending.popleft())
+        finished = True
+    finally:
+        if finished:
+            pool.shutdown(wait=True)
+        else:  # the caller stopped early, or something failed: do not wait for workers
+            procs = list((getattr(pool, "_processes", None) or {}).values())
+            pool.shutdown(wait=False, cancel_futures=True)
+            for proc in procs:
+                proc.terminate()
 
 
 # ---------------------------------------------------------------------------
@@ -149,7 +186,11 @@ def _tokenizer_pass(source, cfg, log):
     chars = 0
     dedup = Deduper()
     stats = CleaningStats()
+    last = time.time()
     for digest, reason, raw_chars, changed, text, _, _ in _processed(source, cfg, None):
+        if time.time() - last > 60:
+            last = time.time()
+            log(f"tokenizer sample: {chars:,} / {tcfg.train_chars:,} chars ({stats.docs_in:,} docs read)")
         stats.add_input(raw_chars, changed)
         if reason is not None:
             stats.add_removed(reason, text)
@@ -185,6 +226,7 @@ def _train_tokenizers(train_docs, val_docs, cfg, out_dir: Path, log):
     comparison = []
     small_sample = _take_chars(train_docs, tcfg.compare_train_chars)
     for vs in tcfg.compare_vocab_sizes:
+        _set_phase(f"training a {vs}-token tokenizer for the size comparison", log)
         t0 = time.time()
         tok = train_tokenizer(small_sample, vs, tcfg.min_frequency)
         row = {
@@ -197,6 +239,7 @@ def _train_tokenizers(train_docs, val_docs, cfg, out_dir: Path, log):
         }
         comparison.append(row)
         log(f"vocab comparison: {row}")
+    _set_phase(f"training the final {tcfg.vocab_size}-token tokenizer on {sum(len(d) for d in train_docs):,} chars", log)
     t0 = time.time()
     tok = train_tokenizer(train_docs, tcfg.vocab_size, tcfg.min_frequency)
     if tok.vocab_size != tcfg.vocab_size:
@@ -270,15 +313,19 @@ def prepare(cfg: DataPrepConfig, out_dir: str | Path, work_dir: str | Path, log=
     if any(out_dir.glob("*.bin")):
         raise FileExistsError(f"{out_dir} already has shards; use an empty folder")
     t_start = time.time()
+    _set_phase("downloading the source files", log)
     source = DocSource(cfg.source, work_dir, log)
     source.prepare()
     log(f"source: {len(source.file_names)} files")
 
+    _set_phase("reading and cleaning documents for the tokenizer sample", log)
     train_docs, val_docs, sample_stats = _tokenizer_pass(source, cfg, log)
     tok_path, tok, comparison, tok_info = _train_tokenizers(train_docs, val_docs, cfg, out_dir, log)
     del train_docs, val_docs
 
+    _set_phase("tokenizing documents into shards", log)
     splits, stats, val_full, token_seconds = _token_pass(source, cfg, tok_path, tok, out_dir, log)
+    _set_phase("done", log)
     manifest = {
         "name": cfg.name,
         "created_unix": int(time.time()),
@@ -299,6 +346,23 @@ def prepare(cfg: DataPrepConfig, out_dir: str | Path, work_dir: str | Path, log=
     return manifest
 
 
+_PHASE = {"name": "starting", "since": time.time()}
+
+
+def _set_phase(name: str, log) -> None:
+    _PHASE.update(name=name, since=time.time())
+    log(name)
+
+
+def _heartbeat(log, every_seconds: float = 300.0) -> None:
+    """Print a line every few minutes, so a slow step is never mistaken for a stuck one."""
+    start = time.time()
+    while True:
+        time.sleep(every_seconds)
+        log(f"still working: {_PHASE['name']} ({(time.time() - _PHASE['since']) / 60:.0f} min in this step, "
+            f"{(time.time() - start) / 60:.0f} min total)")
+
+
 def _versions() -> dict:
     import tokenizers
 
@@ -314,7 +378,12 @@ def main(argv=None) -> None:
     args = p.parse_args(argv)
     cfg = load_data_config(args.config, args.set)
     work = args.work or str(Path(args.out).parent / "work")
-    prepare(cfg, args.out, work, log=lambda m: print(f"[data] {m}", flush=True))
+
+    def log(m):
+        print(f"[data] {m}", flush=True)
+
+    threading.Thread(target=_heartbeat, args=(log,), daemon=True).start()
+    prepare(cfg, args.out, work, log=log)
 
 
 if __name__ == "__main__":

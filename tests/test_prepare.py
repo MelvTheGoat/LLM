@@ -3,7 +3,7 @@ import json
 import numpy as np
 import pytest
 
-from gptlab.data.clean import doc_hash, is_val, normalize
+from gptlab.data.clean import CleanConfig, doc_hash, is_val, normalize
 from gptlab.data.prepare import DataPrepConfig, TokenizerPrepConfig, prepare
 from gptlab.data.shards import list_shards, load_shard
 from gptlab.data.sources import SourceConfig
@@ -117,3 +117,52 @@ def test_refuses_to_overwrite_existing_shards(prepared, tmp_path, sample_docs):
     out, _, _ = prepared
     with pytest.raises(FileExistsError):
         prepare(small_config(make_input(tmp_path, sample_docs)), out, tmp_path / "w", log=lambda m: None)
+
+
+class _DiesInWorker(CleanConfig):
+    """A clean config that kills the worker process that uses it (tests only)."""
+
+    @property
+    def min_chars(self):
+        import multiprocessing as mp
+        import os
+
+        if mp.parent_process() is not None:
+            os._exit(3)
+        return 200
+
+    @min_chars.setter
+    def min_chars(self, value):
+        pass
+
+
+class _HangsInWorker(CleanConfig):
+    """A clean config that makes the worker sleep much longer than the batch timeout."""
+
+    @property
+    def min_chars(self):
+        import multiprocessing as mp
+        import time
+
+        if mp.parent_process() is not None:
+            time.sleep(60)
+        return 200
+
+    @min_chars.setter
+    def min_chars(self, value):
+        pass
+
+
+@pytest.mark.parametrize("clean_cls,match", [(_DiesInWorker, "died"), (_HangsInWorker, "stuck")])
+def test_broken_workers_raise_instead_of_hanging(tmp_path, sample_docs, clean_cls, match):
+    """The first Kaggle smoke run hung for 7 hours when forked workers got stuck. Never again."""
+    import time
+
+    cfg = small_config(make_input(tmp_path, sample_docs))
+    cfg.workers = 2
+    cfg.clean = clean_cls()
+    cfg.batch_timeout_seconds = 5
+    t0 = time.time()
+    with pytest.raises(RuntimeError, match=match):
+        prepare(cfg, tmp_path / "out", tmp_path / "work", log=lambda m: None)
+    assert time.time() - t0 < 45
