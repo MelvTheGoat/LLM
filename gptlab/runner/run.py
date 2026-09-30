@@ -81,23 +81,76 @@ def last_jsonl_record(path: Path) -> dict | None:
     return None
 
 
-def run_logged(cmd: list[str], log_path: Path, env: dict, cwd: Path = REPO_ROOT, timeout: float | None = None) -> int:
-    """Run a command, showing its output live and saving it to a log file."""
+STALLED = -1001  # exit code returned by run_logged when it stopped a silent (stuck) command
+TIMED_OUT = -1002  # exit code returned by run_logged when the job's time limit was reached
+
+
+def run_logged(cmd: list[str], log_path: Path, env: dict, cwd: Path = REPO_ROOT,
+               stall_minutes: float | None = None, deadline: float | None = None) -> int:
+    """Run a command, showing its output live and saving it to a log file.
+
+    If the command prints nothing for `stall_minutes`, it is treated as stuck:
+    the whole process group (for example torchrun and its workers) is stopped
+    and STALLED is returned. Every command we run prints progress at least every
+    few minutes, so silence this long means something hangs. The first Kaggle
+    smoke run hung silently for 7 hours before this check existed.
+
+    If `deadline` (unix time) passes, the command is stopped the same way and
+    TIMED_OUT is returned.
+    """
     log_path.parent.mkdir(parents=True, exist_ok=True)
     say("$ " + " ".join(cmd))
     with open(log_path, "a", encoding="utf-8") as log:
         proc = subprocess.Popen(cmd, cwd=cwd, env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                                text=True, bufsize=1, errors="replace")
-        start = time.time()
+                                text=True, bufsize=1, errors="replace", start_new_session=True)
+        last_output = [time.time()]
+        stalled = threading.Event()
+        timed_out = threading.Event()
+
+        def watchdog() -> None:
+            while proc.poll() is None:
+                silent = stall_minutes and time.time() - last_output[0] > stall_minutes * 60
+                late = deadline is not None and time.time() > deadline
+                if silent or late:
+                    if late:
+                        timed_out.set()
+                        say("the job's time limit was reached; stopping the command")
+                    else:
+                        stalled.set()
+                        say(f"no output for {stall_minutes:g} minutes: the command looks stuck; stopping it")
+                    try:
+                        os.killpg(proc.pid, signal.SIGTERM)
+                        time.sleep(30)
+                        if proc.poll() is None:
+                            os.killpg(proc.pid, signal.SIGKILL)
+                    except ProcessLookupError:
+                        pass
+                    return
+                time.sleep(5)
+
+        threading.Thread(target=watchdog, daemon=True).start()
         for line in proc.stdout:
+            last_output[0] = time.time()
             sys.stdout.write(line)
             sys.stdout.flush()
             log.write(line)
             log.flush()
-            if timeout and time.time() - start > timeout:
-                proc.kill()
-                break
-        return proc.wait()
+        code = proc.wait()
+        if timed_out.is_set():
+            log.write("[runner] stopped: the job's time limit was reached\n")
+            return TIMED_OUT
+        if stalled.is_set():
+            log.write(f"[runner] stopped: no output for {stall_minutes:g} minutes\n")
+            return STALLED
+        return code
+
+
+def describe_exit(code: int) -> str:
+    if code == STALLED:
+        return "stalled (no output for too long; stopped by the runner)"
+    if code == TIMED_OUT:
+        return "time limit reached (stopped by the runner)"
+    return f"exit code {code}"
 
 
 # ---------------------------------------------------------------------------
@@ -241,6 +294,8 @@ class JobRun:
         self.run_dir.mkdir(parents=True, exist_ok=True)
         self.files: list[tuple[Path, str]] = []  # (local file, name in results folder)
         self.ckpt_sync: CheckpointSync | None = None
+        limit = time.time() + job.max_hours * 3600 if job.max_hours else float("inf")
+        self.deadline = min(ctx.session_end, limit)  # commands are stopped at this time
         self._stop = threading.Event()
         self._thread: threading.Thread | None = None
 
@@ -315,14 +370,16 @@ def _train_once(ctx: Context, jr: JobRun, config_path: Path, run_name: str, run_
     restored = restore_checkpoint(ctx.ckpt_store, run_name, run_dir)
     sync = CheckpointSync(ctx.ckpt_store, run_name, run_dir / "ckpt", uploaded=restored)
     jr.ckpt_sync = sync
-    deadline = ctx.session_end - ctx.settings.stop_margin_minutes * 60
+    # Training pauses by itself this long before the job's hard limit, so it can save and upload.
+    deadline = jr.deadline - ctx.settings.stop_margin_minutes * 60
     args = ["-m", "gptlab.train", "--config", str(config_path), "--out-dir", str(run_dir), "--data-dir", str(data_dir),
             "--deadline", f"{deadline:.0f}", "--hellaswag-path", str(ctx.work / "data" / "hellaswag_val.jsonl")]
     for o in overrides or []:
         args += ["--set", o]
     if stop_after:
         args += ["--stop-after-steps", str(stop_after)]
-    code = run_logged(ctx.launcher(args), run_dir / "train.log", ctx.child_env())
+    code = run_logged(ctx.launcher(args), run_dir / "train.log", ctx.child_env(), stall_minutes=ctx.settings.stall_minutes,
+                      deadline=jr.deadline)
     jr.ckpt_sync = None
     try:
         sync.maybe_upload()  # the newest checkpoint, if the background thread has not sent it yet
@@ -347,7 +404,7 @@ def _train_once(ctx: Context, jr: JobRun, config_path: Path, run_name: str, run_
             ctx.ckpt_store.squash()
         except Exception as e:
             say(f"warning: could not squash checkpoint repo history: {e!r}")
-    return state, f"exit code {code}; {run_state.get('reason', '')}".strip()
+    return state, f"{describe_exit(code)}; {run_state.get('reason', '')}".strip()
 
 
 def run_train(ctx: Context, jr: JobRun) -> tuple[str, str]:
@@ -366,7 +423,7 @@ def _dataset_on_hub(ctx: Context, name: str) -> bool:
     return f"{name}/manifest.json" in ctx.data_store.list_files(name)
 
 
-def _prepare_and_upload(ctx: Context, config_path: Path, log_path: Path, replace: bool = False) -> dict:
+def _prepare_and_upload(ctx: Context, config_path: Path, log_path: Path, deadline: float | None = None) -> dict:
     from gptlab.data.prepare import load_data_config
 
     cfg = load_data_config(config_path)
@@ -374,9 +431,11 @@ def _prepare_and_upload(ctx: Context, config_path: Path, log_path: Path, replace
     scratch = ctx.work / "data_work" / cfg.name
     shutil.rmtree(out, ignore_errors=True)
     args = ["-m", "gptlab.data.prepare", "--config", str(config_path), "--out", str(out), "--work", str(scratch)]
-    code = run_logged([sys.executable, *args], log_path, ctx.child_env(keep_hf_token=True))
+    code = run_logged([sys.executable, *args], log_path, ctx.child_env(keep_hf_token=True),
+                      stall_minutes=ctx.settings.stall_minutes,
+                      deadline=deadline)
     if code != 0:
-        raise RuntimeError(f"data preparation failed with exit code {code}")
+        raise RuntimeError(f"data preparation failed: {describe_exit(code)}")
     manifest = json.loads((out / "manifest.json").read_text())
     (out / "README.md").write_text(
         f"# {cfg.name}\n\nToken shards (uint16) made from {cfg.source.repo} ({cfg.source.pattern}) by gptlab's data "
@@ -399,7 +458,7 @@ def run_data(ctx: Context, jr: JobRun) -> tuple[str, str]:
     jr.collect(jr.run_dir / "manifest.json")
     if _dataset_on_hub(ctx, name):
         return "done", f"dataset {name} is already on the Hub; nothing to do"
-    manifest = _prepare_and_upload(ctx, cfg_path, jr.run_dir / "data.log")
+    manifest = _prepare_and_upload(ctx, cfg_path, jr.run_dir / "data.log", jr.deadline)
     (jr.run_dir / "manifest.json").write_text(json.dumps(manifest, indent=2, ensure_ascii=False))
     return "done", f"{manifest['splits']['train']['tokens']:,} train tokens"
 
@@ -408,8 +467,9 @@ def run_bench(ctx: Context, jr: JobRun) -> tuple[str, str]:
     jr.collect(jr.run_dir / "bench.json")
     jr.collect(jr.run_dir / "bench.log")
     args = ["-m", "gptlab.bench", "--config", str(ctx.repo_root / jr.job.config), "--out", str(jr.run_dir)]
-    code = run_logged(ctx.launcher(args), jr.run_dir / "bench.log", ctx.child_env())
-    return ("done" if code == 0 else "failed"), f"exit code {code}"
+    code = run_logged(ctx.launcher(args), jr.run_dir / "bench.log", ctx.child_env(), stall_minutes=ctx.settings.stall_minutes,
+                      deadline=jr.deadline)
+    return ("done" if code == 0 else "failed"), describe_exit(code)
 
 
 def run_eval(ctx: Context, jr: JobRun) -> tuple[str, str]:
@@ -428,8 +488,9 @@ def run_eval(ctx: Context, jr: JobRun) -> tuple[str, str]:
             "--hellaswag-path", str(ctx.work / "data" / "hellaswag_val.jsonl")]
     for k, v in jr.job.args.get("set", {}).items():
         args += ["--set", f"{k}={v}"]
-    code = run_logged(ctx.launcher(args), jr.run_dir / "eval.log", ctx.child_env())
-    return ("done" if code == 0 else "failed"), f"exit code {code}"
+    code = run_logged(ctx.launcher(args), jr.run_dir / "eval.log", ctx.child_env(), stall_minutes=ctx.settings.stall_minutes,
+                      deadline=jr.deadline)
+    return ("done" if code == 0 else "failed"), describe_exit(code)
 
 
 def _losses(run_dir: Path) -> dict[int, float]:
@@ -477,7 +538,7 @@ def run_smoke(ctx: Context, jr: JobRun) -> tuple[str, str]:
 
         jr.collect(root / "data.log", "data/data.log")
         jr.collect(root / "manifest.json", "data/manifest.json")
-        manifest = _prepare_and_upload(ctx, data_cfg, root / "data.log")
+        manifest = _prepare_and_upload(ctx, data_cfg, root / "data.log", jr.deadline)
         (root / "manifest.json").write_text(json.dumps(manifest, indent=2, ensure_ascii=False))
         name = load_data_config(data_cfg).name
         shutil.rmtree(ctx.work / "data" / name)
@@ -536,9 +597,11 @@ def run_smoke(ctx: Context, jr: JobRun) -> tuple[str, str]:
         jr.collect(root / "bench" / "bench.log", "bench/bench.log")
         args = ["-m", "gptlab.bench", "--config", str(ctx.repo_root / spec["bench_config"]), "--out",
                 str(root / "bench")]
-        code = run_logged(ctx.launcher(args), root / "bench" / "bench.log", ctx.child_env())
+        code = run_logged(ctx.launcher(args), root / "bench" / "bench.log", ctx.child_env(),
+                          stall_minutes=ctx.settings.stall_minutes,
+                      deadline=jr.deadline)
         if code != 0:
-            raise RuntimeError(f"bench exit code {code}")
+            raise RuntimeError(f"bench failed: {describe_exit(code)}")
         return {}
 
     step("data", data_step)
