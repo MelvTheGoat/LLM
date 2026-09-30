@@ -14,16 +14,20 @@ settings:
 
 jobs:
   # 1. Check the whole pipeline end to end and measure speed (GPU T4 x2, ~1 hour).
-  - name: smoke
+  #    (The first attempt, "smoke", hung for 7 hours in its data step: forked
+  #    worker processes deadlocked. Fixed; this is the second attempt.)
+  - name: smoke-2
     kind: smoke
     config: configs/smoke/smoke.yaml
     hardware: gpu
     max_attempts: 1        # if it fails, the logs say why; no point burning a second GPU hour
+    max_hours: 2           # safety limit, so a bug can never eat the weekly GPU quota again
 
   # 2. Build the real token dataset (CPU session: free, no GPU hours; ~1-3 hours).
   - name: data-fineweb-edu-16k
     kind: data
     config: configs/data/fineweb_edu_16k.yaml
     hardware: cpu
+    max_hours: 8
 
   # Experiments are added here after the smoke test (see EXPERIMENTS.md).
