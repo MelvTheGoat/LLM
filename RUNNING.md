@@ -87,20 +87,20 @@ You can run a CPU session and a GPU session at the same time (save one version
 with GPU, switch the accelerator, save another). The runner makes sure two
 sessions never pick the same job.
 
-## The first two runs
+## Order of runs
 
-The queue starts with:
+1. **`smoke-2`** (GPU T4 x2, done): ran the whole pipeline on a tiny slice of
+   data and measured the speed of six model sizes. Those speeds set the compute
+   budget in [EXPERIMENTS.md](EXPERIMENTS.md).
+2. **`data-fineweb-edu-16k`** (Accelerator **None**, about 1 to 3 hours): builds
+   the real dataset (about 2.6B training tokens) and uploads it to Hugging Face.
+   Every training run waits for it, so run it first.
+3. **Experiments** (GPU T4 x2), in stages. The queue only ever holds the current
+   stage. After each stage, say "check results": the next stage is chosen from
+   what the last one showed (for example, the learning rates).
 
-1. **`smoke`** (GPU T4 x2, about 1 hour). It runs the whole pipeline on a tiny
-   slice of data: data download and cleaning, tokenizer, shards, a Hugging Face
-   upload and download, DDP training on both GPUs with fp16, a stop and resume
-   from the Hub, evaluation, and a speed benchmark of six model sizes. The
-   speed numbers set the compute budget for the experiments.
-2. **`data-fineweb-edu-16k`** (CPU, about 1 to 3 hours). It builds the real
-   dataset (about 2.6B training tokens) and uploads it to Hugging Face.
-
-So: run once with **GPU T4 x2**, then once with **None**, in either order or at
-the same time. Then say "check results".
+If you start a GPU session while the dataset is still being built, it runs the
+jobs that don't need data (the speed benchmark) and then stops.
 
 ## Checking results
 

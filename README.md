@@ -77,14 +77,15 @@ stops cleanly before Kaggle's time limit. See [RUNNING.md](RUNNING.md).
 
 | Experiment | Status |
 | --- | --- |
-| Smoke test and speed benchmark | not run yet |
+| Smoke test and speed benchmark | done: whole pipeline passed on 2x T4; speeds in `EXPERIMENTS.md` |
 | A. Scaling (5 to 6 sizes, power-law fit, comparison with Chinchilla) | not run yet |
 | B. Ablations (RoPE, RMSNorm, pre/post norm, SwiGLU, warmup; 2 seeds) | not run yet |
 | C. Stability (too-high learning rate, diagnosis, fix) | not run yet |
 | D. Efficiency (fp16, compile, DDP, batch size) | not run yet |
 | E. Evaluation (loss, perplexity, HellaSwag, samples) | not run yet |
 
-The plan and compute budget will be in `EXPERIMENTS.md` after the smoke test.
+The plan, the compute budget (about 46 GPU hours) and the measured speeds are in
+[EXPERIMENTS.md](EXPERIMENTS.md).
 
 ## Repo layout
 
@@ -94,6 +95,7 @@ The plan and compute budget will be in `EXPERIMENTS.md` after the smoke test.
 | `gptlab/data/` | Download, cleaning, tokenizer, token shards, data loader |
 | `gptlab/runner/` | The job runner that the Kaggle notebook calls |
 | `configs/` | One YAML file per run. Any result can be re-run from its file |
+| `scripts/make_configs.py` | Writes the experiment configs in `configs/exp/` from one table |
 | `runs/queue.yaml` | The list of jobs Kaggle works through |
 | `kaggle/runner.ipynb` | The notebook you paste into Kaggle once |
 | `tests/` | pytest tests. They run on a CPU in under a minute |
