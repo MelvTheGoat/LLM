@@ -1,0 +1,32 @@
+{
+  "val_loss": 6.022384815277394,
+  "val_ppl": 412.5613059750589,
+  "val_tokens": 159232,
+  "val_bpb": 1.9882808611977338,
+  "hellaswag_error": "<HTTPError 404: 'Not Found'>",
+  "samples": [
+    {
+      "prompt": "The most important idea in physics is",
+      "completion": " the role of the largest and as a small time for the time.\nThe new of the study is the person is a good way to make the same time, the body, of the world.\n- the first way for this type?\nMare, where you have to develop the same to use of the first study, which might also work in the past of the study, the number of the way that the United States, and the second year, the first time"
+    },
+    {
+      "prompt": "In the year 1850, the city of",
+      "completion": " the \"The SC, we are made by\nSal, as the study of this is a small source of the first days of the same story.\nThe “domin is a few months, as the past. When they will have been no time that the person’s great-the first way that the first work had to keep the world.\nI am is the\nThe most of the United States, they was made the new way to the most"
+    },
+    {
+      "prompt": "To make bread at home, you need",
+      "completion": " to the world and do your work.\nAs what does you know you know, but do you want to need to make the amount for these people. We have the future and you want them are the same time.\nSo your way:\n- You can find a child to do you know your the study with the way to be much of those.\nA study, you can be like a good problem, you we have some of many you need to ensure you get"
+    },
+    {
+      "prompt": "Photosynthesis is the process by which",
+      "completion": " a time for the original world at the National Daros.\nAt the last one’s day, the Srii and the end.\nIn is an second time that the use of the first study in the case of the Bander. The \"S. The last study of the study, to the Best of the Tamle in the Tami is a wide-cile which is at the study of \"bilus, but from"
+    }
+  ],
+  "step": 200,
+  "tokens": 13107200,
+  "params": {
+    "total": 7309568,
+    "embedding": 4194304,
+    "non_embedding": 3115264
+  }
+}

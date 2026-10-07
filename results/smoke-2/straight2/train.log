@@ -16,3 +16,18 @@ Setting OMP_NUM_THREADS environment variable for each process to be 1 in default
 [smoke-train] step 70/200 | loss 6.6597 | lr 8.45e-04 | gnorm 0.592 | 174,562 tok/s | mfu 6.7% | eta 0.01h
 [smoke-train] step 80/200 | loss 6.5594 | lr 7.82e-04 | gnorm 0.406 | 172,679 tok/s | mfu 6.7% | eta 0.01h
 [smoke-train] step 90/200 | loss 6.4865 | lr 7.11e-04 | gnorm 0.347 | 171,201 tok/s | mfu 6.6% | eta 0.01h
+[smoke-train] step 100/200 | loss 6.3919 | lr 6.36e-04 | gnorm 0.361 | 168,855 tok/s | mfu 6.5% | eta 0.01h
+[smoke-train] step 100 | val loss 6.3769
+[smoke-train] step 110/200 | loss 6.3448 | lr 5.58e-04 | gnorm 0.427 | 152,559 tok/s | mfu 5.9% | eta 0.01h
+[smoke-train] step 120/200 | loss 6.2343 | lr 4.80e-04 | gnorm 0.406 | 169,288 tok/s | mfu 6.5% | eta 0.01h
+[smoke-train] step 130/200 | loss 6.2065 | lr 4.03e-04 | gnorm 0.458 | 171,108 tok/s | mfu 6.6% | eta 0.01h
+[smoke-train] step 140/200 | loss 6.1822 | lr 3.32e-04 | gnorm 0.360 | 173,420 tok/s | mfu 6.7% | eta 0.01h
+[smoke-train] step 150/200 | loss 6.1465 | lr 2.67e-04 | gnorm 0.326 | 174,507 tok/s | mfu 6.7% | eta 0.01h
+[smoke-train] step 150 | val loss 6.1188
+[smoke-train] step 160/200 | loss 6.0866 | lr 2.10e-04 | gnorm 0.342 | 157,563 tok/s | mfu 6.1% | eta 0.00h
+[smoke-train] step 170/200 | loss 6.0665 | lr 1.64e-04 | gnorm 0.384 | 176,143 tok/s | mfu 6.8% | eta 0.00h
+[smoke-train] step 180/200 | loss 6.0482 | lr 1.30e-04 | gnorm 0.318 | 176,607 tok/s | mfu 6.8% | eta 0.00h
+[smoke-train] step 190/200 | loss 6.0554 | lr 1.08e-04 | gnorm 0.321 | 176,973 tok/s | mfu 6.8% | eta 0.00h
+[smoke-train] step 200/200 | loss 6.0190 | lr 1.00e-04 | gnorm 0.414 | 177,115 tok/s | mfu 6.8% | eta 0.00h
+[smoke-train] final val loss 6.0224  ppl 412.56  bpb 1.9883
+[smoke-train] hellaswag skipped: <HTTPError 404: 'Not Found'>
