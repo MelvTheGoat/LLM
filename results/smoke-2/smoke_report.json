@@ -5,6 +5,17 @@
       "train_tokens": 20003557,
       "shards": 6,
       "seconds": 87.6
+    },
+    "resume": {
+      "ok": true,
+      "steps": 200,
+      "resumed_at": 100,
+      "max_diff_straight_vs_straight2": 0.013685226440429688,
+      "max_diff_straight_vs_resumed": 0.0121002197265625,
+      "max_diff_after_resume": 0.006252765655517578,
+      "identical_after_resume": false,
+      "final_loss": 6.016397953033447,
+      "seconds": 330.8
     }
   }
 }
