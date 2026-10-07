@@ -24,3 +24,10 @@ Setting OMP_NUM_THREADS environment variable for each process to be 1 in default
 [smoke-train] step 140/200 | loss 6.1799 | lr 3.32e-04 | gnorm 0.404 | 167,785 tok/s | mfu 6.5% | eta 0.01h
 [smoke-train] step 150/200 | loss 6.1447 | lr 2.67e-04 | gnorm 0.370 | 170,516 tok/s | mfu 6.6% | eta 0.01h
 [smoke-train] step 150 | val loss 6.1161
+[smoke-train] step 160/200 | loss 6.0841 | lr 2.10e-04 | gnorm 0.301 | 157,430 tok/s | mfu 6.1% | eta 0.00h
+[smoke-train] step 170/200 | loss 6.0644 | lr 1.64e-04 | gnorm 0.358 | 174,690 tok/s | mfu 6.7% | eta 0.00h
+[smoke-train] step 180/200 | loss 6.0457 | lr 1.30e-04 | gnorm 0.316 | 175,647 tok/s | mfu 6.8% | eta 0.00h
+[smoke-train] step 190/200 | loss 6.0530 | lr 1.08e-04 | gnorm 0.301 | 176,388 tok/s | mfu 6.8% | eta 0.00h
+[smoke-train] step 200/200 | loss 6.0164 | lr 1.00e-04 | gnorm 0.400 | 176,962 tok/s | mfu 6.8% | eta 0.00h
+[smoke-train] final val loss 6.0202  ppl 411.65  bpb 1.9875
+[smoke-train] hellaswag skipped: <HTTPError 404: 'Not Found'>

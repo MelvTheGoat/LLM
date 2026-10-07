@@ -1,0 +1,62 @@
+name: smoke-train
+seed: 1337
+notes: pipeline check only
+model:
+  vocab_size: 16384
+  seq_len: 512
+  n_layer: 4
+  n_head: 4
+  d_model: 256
+  pos_encoding: rope
+  norm: rmsnorm
+  norm_placement: pre
+  mlp: swiglu
+  mlp_hidden: null
+  tie_weights: true
+  qk_norm: false
+  bias: false
+  dropout: 0.0
+  init_std: 0.02
+  rope_theta: 10000.0
+  norm_eps: 1.0e-05
+data:
+  name: smoke-data
+  root: null
+  max_train_shards: null
+  seed: 1234
+train:
+  tokens: null
+  max_steps: 200
+  global_batch_tokens: 65536
+  micro_batch_size: 16
+  lr: 0.001
+  min_lr_ratio: 0.1
+  warmup_steps: 20
+  schedule: cosine
+  weight_decay: 0.1
+  beta1: 0.9
+  beta2: 0.95
+  eps: 1.0e-08
+  grad_clip: 1.0
+  z_loss: 0.0
+  precision: fp16
+  compile: false
+  print_interval: 10
+  debug_interval: 50
+  ckpt_interval_minutes: 30.0
+  ckpt_interval_steps: 50
+  keep_checkpoints: 2
+  diverge_patience: 100
+  diverge_loss: null
+eval:
+  interval: 50
+  tokens: 262144
+  final_tokens: 1000000
+  hellaswag: true
+  hellaswag_limit: 2000
+  sample_tokens: 96
+  sample_prompts:
+  - The most important idea in physics is
+  - In the year 1850, the city of
+  - To make bread at home, you need
+  - Photosynthesis is the process by which
