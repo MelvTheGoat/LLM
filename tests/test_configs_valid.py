@@ -46,3 +46,30 @@ def test_kaggle_notebook_is_valid_and_starts_the_runner():
     compile(code, "runner.ipynb", "exec")
     assert "gptlab.runner" in code and "SESSION_START" in code
     assert 'BRANCH = "main"' in code
+
+
+def test_generated_experiment_configs_are_up_to_date():
+    import subprocess
+    import sys
+
+    p = subprocess.run([sys.executable, str(ROOT / "scripts" / "make_configs.py"), "--check"],
+                       capture_output=True, text=True)
+    assert p.returncode == 0, p.stdout + p.stderr
+
+
+def test_queue_jobs_point_to_configs_that_load():
+    from gptlab.bench import load_bench_config
+    from gptlab.config import load_config
+    from gptlab.runner.queue import load_queue
+
+    queue = load_queue(ROOT / "runs" / "queue.yaml", ROOT)
+    names = [j.name for j in queue.jobs]
+    assert len(names) == len(set(names)), "job names must be unique"
+    for job in queue.jobs:
+        assert all(a in names for a in job.after), f"{job.name} waits for a job that is not in the queue"
+        if job.kind == "train":
+            cfg = load_config(ROOT / job.config)
+            assert cfg.name == job.name, f"{job.config}: config name should match the job name"
+            assert cfg.model.vocab_size == 16384 and cfg.data.name == "fineweb-edu-16k"
+        if job.kind == "bench":
+            assert load_bench_config(ROOT / job.config).all_cases()
