@@ -189,3 +189,51 @@ def test_ddp_check_prints_a_result_line():
     line = [x for x in p.stdout.splitlines() if x.startswith("{")][-1]
     result = json.loads(line)
     assert result["ddp_ok"] and result["world_size"] == 2 and result["bus_gb_per_s"] > 0
+
+
+def test_watchdog_stops_a_silent_command_and_its_children(tmp_path):
+    import sys
+    import time
+
+    from gptlab.runner.run import STALLED, run_logged
+
+    marker = tmp_path / "child.pid"
+    # Prints once, starts a child that also hangs, then goes silent.
+    script = (
+        "import subprocess, sys, time; "
+        f"p = subprocess.Popen([sys.executable, '-c', 'import time; time.sleep(600)']); "
+        f"open({str(marker)!r}, 'w').write(str(p.pid)); "
+        "print('started', flush=True); time.sleep(600)"
+    )
+    t0 = time.time()
+    code = run_logged([sys.executable, "-c", script], tmp_path / "x.log", env=None, stall_minutes=0.05)
+    assert code == STALLED
+    assert time.time() - t0 < 60
+    child = int(marker.read_text())
+    time.sleep(1)
+    alive = subprocess.run(["ps", "-o", "stat=", "-p", str(child)], capture_output=True, text=True).stdout.strip()
+    assert alive in ("", "Z")  # gone (or a zombie waiting to be reaped)
+    assert "started" in (tmp_path / "x.log").read_text()
+
+
+def test_watchdog_leaves_a_talking_command_alone(tmp_path):
+    import sys
+
+    from gptlab.runner.run import run_logged
+
+    script = "import time\nfor i in range(4):\n    print(i, flush=True)\n    time.sleep(1)\n"
+    code = run_logged([sys.executable, "-c", script], tmp_path / "y.log", env=None, stall_minutes=0.05)
+    assert code == 0
+
+
+def test_time_limit_stops_a_command(tmp_path):
+    import sys
+    import time
+
+    from gptlab.runner.run import TIMED_OUT, run_logged
+
+    script = "import time\nwhile True:\n    print('working', flush=True)\n    time.sleep(0.5)\n"
+    t0 = time.time()
+    code = run_logged([sys.executable, "-c", script], tmp_path / "z.log", env=None, stall_minutes=10,
+                      deadline=time.time() + 3)
+    assert code == TIMED_OUT and time.time() - t0 < 30

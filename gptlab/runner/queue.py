@@ -33,6 +33,7 @@ class Job:
     hardware: str = "gpu"  # "gpu" or "cpu": the kind of Kaggle session that may run it
     after: list[str] = field(default_factory=list)  # jobs that must be finished first
     max_attempts: int = 2
+    max_hours: float | None = None  # safety limit: stop the job after this long in one session
     args: dict = field(default_factory=dict)  # extra settings for some kinds
     notes: str = ""
 
@@ -54,6 +55,7 @@ class Settings:
     ckpt_check_seconds: float = 60.0  # how often to look for a new checkpoint to upload
     chain_jobs: bool = True  # after a job ends, start the next one if time allows
     log_tail_mb: float = 5.0  # keep at most this much of each console log in results
+    stall_minutes: float = 30.0  # stop a job that prints nothing for this long (it is stuck)
 
 
 @dataclass

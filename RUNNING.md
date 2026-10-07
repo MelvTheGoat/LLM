@@ -125,6 +125,7 @@ code, you will be told to merge first.
 | `GH_TOKEN is not set` or `git push` fails with 403 | The GitHub token expired or lacks *Contents: Read and write* on this repo. Make a new one. |
 | A job shows `running` but no session is running | That session was killed (for example stopped by hand or out of quota). After 30 minutes without a heartbeat, the next run picks the job up again and resumes from the last checkpoint. |
 | A job shows `failed` twice | It needs a code fix. Say "check results". |
+| `no output for 30 minutes: the command looks stuck` or `time limit reached` | The runner stopped a job that hung or ran past its `max_hours` limit, so it could not eat your GPU hours. Say "check results". |
 | `no job can run in this session` | Every job is done, running elsewhere, waiting for another job, or needs the other session type (GPU vs CPU). The log lists the reason for each job. |
 | The weekly GPU quota ran out mid-run | Nothing is lost except at most 30 minutes of training. The job resumes next week, or as soon as there is quota. |
 | You want to stop a run early | Stop the session in Kaggle. The job resumes next time from the last checkpoint (at most 30 minutes old). |
