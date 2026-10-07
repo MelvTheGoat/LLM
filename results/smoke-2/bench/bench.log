@@ -1,0 +1,23 @@
+
+*****************************************
+Setting OMP_NUM_THREADS environment variable for each process to be 1 in default, to avoid your system being overloaded, please further tune the variable for optimal performance in your application as needed. 
+*****************************************
+[W1007 11:50:20.059824645 socket.cpp:207] [c10d] The hostname of the client socket cannot be retrieved. err=-3
+[W1007 11:50:23.326879907 socket.cpp:207] [c10d] The hostname of the client socket cannot be retrieved. err=-3
+[W1007 11:50:23.418796486 socket.cpp:207] [c10d] The hostname of the client socket cannot be retrieved. err=-3
+[bench]     s1 fp16 compile=False gpus=2 micro= 32 |    243,209 tok/s | mfu 4.4% | mem 11.0 GB | first step 0.3s
+[rank0]:W1007 11:50:42.758000 574 torch/_inductor/utils.py:1679] [0/0] Not enough SMs to use max_autotune_gemm mode
+[rank1]:W1007 11:50:42.763000 575 torch/_inductor/utils.py:1679] [0/0] Not enough SMs to use max_autotune_gemm mode
+[bench]     s1 fp16 compile=True  gpus=2 micro= 32 |    624,696 tok/s | mfu 11.4% | mem 5.7 GB | first step 32.0s
+[bench]     s2 fp16 compile=False gpus=2 micro= 32 |    134,930 tok/s | mfu 7.5% | mem 12.8 GB | first step 0.5s
+[bench]     s2 fp16 compile=True  gpus=2 micro= 32 |    269,650 tok/s | mfu 14.9% | mem 7.1 GB | first step 17.7s
+[bench]     s3 fp16 compile=False gpus=2 micro= 16 |     80,492 tok/s | mfu 9.9% | mem 8.0 GB | first step 0.4s
+[bench]     s3 fp16 compile=True  gpus=2 micro= 16 |    141,151 tok/s | mfu 17.4% | mem 4.8 GB | first step 29.8s
+[bench]     s4 fp16 compile=False gpus=2 micro= 16 |     57,794 tok/s | mfu 11.2% | mem 9.2 GB | first step 0.6s
+[bench]     s4 fp16 compile=True  gpus=2 micro= 16 |    100,873 tok/s | mfu 19.6% | mem 5.7 GB | first step 29.0s
+[bench]     s5 fp16 compile=False gpus=2 micro= 16 |     36,581 tok/s | mfu 12.2% | mem 11.3 GB | first step 0.9s
+[bench]     s5 fp16 compile=True  gpus=2 micro= 16 |     59,452 tok/s | mfu 19.9% | mem 7.6 GB | first step 29.8s
+[bench]     s6 fp16 compile=False gpus=2 micro=  8 |     24,522 tok/s | mfu 13.2% | mem 8.3 GB | first step 0.7s
+[bench]     s6 fp16 compile=True  gpus=2 micro=  8 |     37,324 tok/s | mfu 20.1% | mem 5.6 GB | first step 24.9s
+[bench]     s4 fp32 compile=False gpus=2 micro= 16 |     21,442 tok/s | mfu 33.4% | mem 11.3 GB | first step 1.6s
+[bench]     s4 fp16 compile=False gpus=1 micro= 16 |     33,188 tok/s | mfu 12.9% | mem 8.9 GB | first step 0.5s

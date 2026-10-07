@@ -16,6 +16,10 @@
       "identical_after_resume": false,
       "final_loss": 6.016397953033447,
       "seconds": 330.8
+    },
+    "bench": {
+      "ok": true,
+      "seconds": 326.9
     }
   }
 }
