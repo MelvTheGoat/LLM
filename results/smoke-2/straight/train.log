@@ -1,0 +1,26 @@
+
+*****************************************
+Setting OMP_NUM_THREADS environment variable for each process to be 1 in default, to avoid your system being overloaded, please further tune the variable for optimal performance in your application as needed. 
+*****************************************
+[W1007 11:44:49.863845478 socket.cpp:207] [c10d] The hostname of the client socket cannot be retrieved. err=-3
+[W1007 11:44:52.385981912 socket.cpp:207] [c10d] The hostname of the client socket cannot be retrieved. err=-3
+[W1007 11:44:52.401422588 socket.cpp:207] [c10d] The hostname of the client socket cannot be retrieved. err=-3
+[smoke-train] starting | step 0/200 | params 7,309,568 (non-embedding 3,115,264) | world 2 | accum 4 | Tesla T4
+[smoke-train] step 10/200 | loss 8.9705 | lr 5.00e-04 | gnorm 1.293 | 141,847 tok/s | mfu 5.5% | eta 0.02h
+[smoke-train] step 20/200 | loss 7.8889 | lr 1.00e-03 | gnorm 1.234 | 181,361 tok/s | mfu 7.0% | eta 0.02h
+[smoke-train] step 30/200 | loss 7.3949 | lr 9.94e-04 | gnorm 0.654 | 180,781 tok/s | mfu 7.0% | eta 0.02h
+[smoke-train] step 40/200 | loss 7.1859 | lr 9.75e-04 | gnorm 0.389 | 179,560 tok/s | mfu 6.9% | eta 0.02h
+[smoke-train] step 50/200 | loss 7.0054 | lr 9.44e-04 | gnorm 0.706 | 178,889 tok/s | mfu 6.9% | eta 0.02h
+[smoke-train] step 50 | val loss 7.0002
+[smoke-train] step 60/200 | loss 6.8394 | lr 9.00e-04 | gnorm 0.474 | 157,848 tok/s | mfu 6.1% | eta 0.02h
+[smoke-train] step 70/200 | loss 6.6530 | lr 8.45e-04 | gnorm 0.329 | 177,253 tok/s | mfu 6.8% | eta 0.01h
+[smoke-train] step 80/200 | loss 6.5580 | lr 7.82e-04 | gnorm 0.426 | 176,280 tok/s | mfu 6.8% | eta 0.01h
+[smoke-train] step 90/200 | loss 6.4869 | lr 7.11e-04 | gnorm 0.403 | 174,900 tok/s | mfu 6.7% | eta 0.01h
+[smoke-train] step 100/200 | loss 6.3902 | lr 6.36e-04 | gnorm 0.431 | 173,607 tok/s | mfu 6.7% | eta 0.01h
+[smoke-train] step 100 | val loss 6.3746
+[smoke-train] step 110/200 | loss 6.3398 | lr 5.58e-04 | gnorm 0.375 | 155,807 tok/s | mfu 6.0% | eta 0.01h
+[smoke-train] step 120/200 | loss 6.2336 | lr 4.80e-04 | gnorm 0.425 | 169,668 tok/s | mfu 6.5% | eta 0.01h
+[smoke-train] step 130/200 | loss 6.2022 | lr 4.03e-04 | gnorm 0.302 | 168,011 tok/s | mfu 6.5% | eta 0.01h
+[smoke-train] step 140/200 | loss 6.1799 | lr 3.32e-04 | gnorm 0.404 | 167,785 tok/s | mfu 6.5% | eta 0.01h
+[smoke-train] step 150/200 | loss 6.1447 | lr 2.67e-04 | gnorm 0.370 | 170,516 tok/s | mfu 6.6% | eta 0.01h
+[smoke-train] step 150 | val loss 6.1161
