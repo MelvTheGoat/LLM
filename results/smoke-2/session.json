@@ -1,0 +1,23 @@
+{
+  "session": "a50f8bc4",
+  "started_unix": 1791373380.6094387,
+  "hardware": "gpu",
+  "n_gpus": 2,
+  "python": "3.12.13",
+  "torch": "2.10.0+cu128",
+  "cuda": "12.8",
+  "git_commit": "7fb6ed3660b549e2ed240f6dcab0e05df0490b34",
+  "cpu_count": 4,
+  "gpu": "Tesla T4",
+  "disk_free_gb:/tmp/gptlab-work": 1069.9,
+  "disk_free_gb:/kaggle/working": 19.5,
+  "ram_gb": 31.3,
+  "ddp_check": {
+    "ddp_ok": true,
+    "world_size": 2,
+    "tensor_mb": 256.0,
+    "allreduce_ms": 66.20582259999992,
+    "bus_gb_per_s": 4.054559636269821,
+    "nccl_env": {}
+  }
+}

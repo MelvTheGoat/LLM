@@ -1,0 +1,15 @@
+{
+  "job": "smoke-2",
+  "kind": "smoke",
+  "config": "configs/smoke/smoke.yaml",
+  "state": "running",
+  "session": "a50f8bc4",
+  "hardware": "Tesla T4",
+  "git_commit": "7fb6ed3660b549e2ed240f6dcab0e05df0490b34",
+  "heartbeat_unix": 1791373393.2847989,
+  "attempts": 1,
+  "sessions": 1,
+  "message": "",
+  "first_started_unix": 1791373393.2848032,
+  "session_started_unix": 1791373393.284804
+}
