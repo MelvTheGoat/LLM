@@ -1,0 +1,10 @@
+{
+  "steps": {
+    "data": {
+      "ok": true,
+      "train_tokens": 20003557,
+      "shards": 6,
+      "seconds": 87.6
+    }
+  }
+}

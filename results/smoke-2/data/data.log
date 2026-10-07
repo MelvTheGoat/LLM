@@ -1,0 +1,14 @@
+[data] downloading the source files
+[data] downloading HuggingFaceFW/fineweb-edu/sample/10BT/000_00000.parquet
+[data] source: 1 files
+[data] reading and cleaning documents for the tokenizer sample
+[data] tokenizer sample: 6308 train docs, 30,002,625 chars; 69 val docs
+[data] training a 8192-token tokenizer for the size comparison
+[data] vocab comparison: {'vocab_size': 8192, 'actual_vocab_size': 8192, 'train_chars': 10003716, 'val_docs': 69, 'bytes_per_token_val': 3.9402150161699154, 'train_seconds': 2.6}
+[data] training a 16384-token tokenizer for the size comparison
+[data] vocab comparison: {'vocab_size': 16384, 'actual_vocab_size': 16384, 'train_chars': 10003716, 'val_docs': 69, 'bytes_per_token_val': 4.319745491481247, 'train_seconds': 2.6}
+[data] training the final 16384-token tokenizer on 30,002,625 chars
+[data] final tokenizer: {'vocab_size': 16384, 'eot_id': 0, 'train_docs': 6308, 'train_chars': 30002625, 'train_seconds': 6.1, 'bytes_per_token_val': 4.349755881047492}
+[data] tokenizing documents into shards
+[data] done
+[data] done: 20,003,557 train tokens, 159,719 val tokens

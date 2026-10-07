@@ -1,0 +1,148 @@
+{
+  "name": "smoke-data",
+  "created_unix": 1791373462,
+  "config": {
+    "name": "smoke-data",
+    "seed": 1234,
+    "source": {
+      "kind": "hf_parquet",
+      "repo": "HuggingFaceFW/fineweb-edu",
+      "pattern": "sample/10BT/*.parquet",
+      "path": null,
+      "num_files": 1,
+      "text_field": "text",
+      "jsonl_group_size": 16
+    },
+    "clean": {
+      "min_chars": 200,
+      "max_chars": 1000000,
+      "max_bad_char_frac": 0.001,
+      "min_letter_frac": 0.25
+    },
+    "tokenizer": {
+      "vocab_size": 16384,
+      "train_chars": 30000000,
+      "min_frequency": 2,
+      "compare_vocab_sizes": [
+        8192,
+        16384
+      ],
+      "compare_train_chars": 10000000,
+      "compare_eval_docs": 300
+    },
+    "train_tokens": 20000000,
+    "val_fraction": 0.01,
+    "max_val_tokens": 1000000,
+    "shard_tokens": 5000000,
+    "workers": 0,
+    "batch_docs": 256,
+    "batch_timeout_seconds": 900.0
+  },
+  "source_files": [
+    "HuggingFaceFW/fineweb-edu/sample/10BT/000_00000.parquet"
+  ],
+  "tokenizer": {
+    "vocab_size": 16384,
+    "eot_id": 0,
+    "train_docs": 6308,
+    "train_chars": 30002625,
+    "train_seconds": 6.1,
+    "bytes_per_token_val": 4.349755881047492
+  },
+  "vocab_comparison": [
+    {
+      "vocab_size": 8192,
+      "actual_vocab_size": 8192,
+      "train_chars": 10003716,
+      "val_docs": 69,
+      "bytes_per_token_val": 3.9402150161699154,
+      "train_seconds": 2.6
+    },
+    {
+      "vocab_size": 16384,
+      "actual_vocab_size": 16384,
+      "train_chars": 10003716,
+      "val_docs": 69,
+      "bytes_per_token_val": 4.319745491481247,
+      "train_seconds": 2.6
+    }
+  ],
+  "splits": {
+    "train": {
+      "docs": 18175,
+      "tokens": 20003557,
+      "text_bytes": 85691158,
+      "bytes_per_token": 4.28379602687662,
+      "shards": [
+        "train_000000.bin",
+        "train_000001.bin",
+        "train_000002.bin",
+        "train_000003.bin",
+        "train_000004.bin"
+      ]
+    },
+    "val": {
+      "docs": 172,
+      "tokens": 159719,
+      "text_bytes": 697973,
+      "bytes_per_token": 4.370006073165998,
+      "shards": [
+        "val_000000.bin"
+      ]
+    }
+  },
+  "cleaning": {
+    "docs_in": 18350,
+    "docs_kept": 18347,
+    "chars_in": 86013067,
+    "chars_kept": 86389131,
+    "docs_changed_by_normalize": 109,
+    "removed_docs": {
+      "bad_characters": 3
+    },
+    "removed_chars": {
+      "bad_characters": 48709
+    },
+    "removed_fraction_of_docs": {
+      "bad_characters": 0.00016348773841961853
+    },
+    "examples": {
+      "bad_characters": [
+        "From today I want to write about PHP,coz Im learnig PHP.So let’s start…\nWhat is PHP\nThe endless possibilities of the PHP scripting language and a great community of users has made it one of the most popular open-source languages. For all you people living outside the UNIX world, Open Source means it",
+        "NATURE AND TYPES OF DHYANA: Having discussed the nature of five kinds\nof internal tapas, we now proceed to dwell upon the nature of Dhyana.\nIt will not be amiss to point out that all the disciplinary practices\nform an essential background for the performance of Dhyana. Just as\nthe storage of water w",
+        "How is the HTML form action created from servlet-mapping url-pattern?\nJoined: Sep 07, 2004\nI am reading HF�s SCWCD-book Servlets & JSP and is currently studying their beer selection web application created as a struts. And I have understood everything from their good explanations and got everything "
+      ]
+    }
+  },
+  "val_docs_dropped_because_val_was_full": 0,
+  "tokenizer_sample_cleaning": {
+    "docs_in": 6378,
+    "docs_kept": 6377,
+    "chars_in": 30231248,
+    "chars_kept": 30227143,
+    "docs_changed_by_normalize": 33,
+    "removed_docs": {
+      "bad_characters": 1
+    },
+    "removed_chars": {
+      "bad_characters": 4042
+    },
+    "removed_fraction_of_docs": {
+      "bad_characters": 0.00015678896205707118
+    },
+    "examples": {
+      "bad_characters": [
+        "From today I want to write about PHP,coz Im learnig PHP.So let’s start…\nWhat is PHP\nThe endless possibilities of the PHP scripting language and a great community of users has made it one of the most popular open-source languages. For all you people living outside the UNIX world, Open Source means it"
+      ]
+    }
+  },
+  "seconds": {
+    "token_pass": 30.6,
+    "total": 67.6
+  },
+  "versions": {
+    "python": "3.12.13",
+    "numpy": "2.0.2",
+    "tokenizers": "0.22.2"
+  }
+}
