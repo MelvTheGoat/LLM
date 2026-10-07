@@ -1,0 +1,32 @@
+{
+  "val_loss": 6.017625250617024,
+  "val_ppl": 410.6023593275958,
+  "val_tokens": 159232,
+  "val_bpb": 1.986709498421672,
+  "hellaswag_error": "<HTTPError 404: 'Not Found'>",
+  "samples": [
+    {
+      "prompt": "The most important idea in physics is",
+      "completion": " the role of the largest and as a small time for the time.\nThe new of the study is very good is a good way to make the same time, the body, of your children.\n- It is less than the second, that there are not very important to make a week, the use of people from the day, the time, in the past of the study is a number of the way that the United States, and the second year, the first time"
+    },
+    {
+      "prompt": "In the year 1850, the city of",
+      "completion": " the \"The SC, we are made by\nSali, the NTm of AE-in-sihan.<|endoftext|>Ereon (dom. The same of the Tamler. A. T-S. is that the first first thing in the world, the\nThe Ragi\nThis, the same study ago was a very result of the D.S. University, was made the new way of the most"
+    },
+    {
+      "prompt": "To make bread at home, you need",
+      "completion": " to work to use\nThe role of our problem, your world and can know the way to take his to need to make the amount of these people. We have the future and you want for what they are many more likely to be a few.\nA.e is the number of the book\nWhat are more more about a way of them, so that did you have the same.\nThis year, the “tare, the number of water from the body that"
+    },
+    {
+      "prompt": "Photosynthesis is the process by which",
+      "completion": " a time for the original world at the National Daros.\nAt the last one’s day, the Srii and the end had the first is considered the right time to use the original of the US, the first.\nMouy M. and the National of American Wan, and to the Beston.\nWhat is a “in of\nDromomus who is the time of the Nimbil. In this,"
+    }
+  ],
+  "step": 200,
+  "tokens": 13107200,
+  "params": {
+    "total": 7309568,
+    "embedding": 4194304,
+    "non_embedding": 3115264
+  }
+}

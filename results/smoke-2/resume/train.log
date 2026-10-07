@@ -1,0 +1,42 @@
+
+*****************************************
+Setting OMP_NUM_THREADS environment variable for each process to be 1 in default, to avoid your system being overloaded, please further tune the variable for optimal performance in your application as needed. 
+*****************************************
+[W1007 11:48:06.502604034 socket.cpp:207] [c10d] The hostname of the client socket cannot be retrieved. err=-3
+[W1007 11:48:08.878446588 socket.cpp:207] [c10d] The hostname of the client socket cannot be retrieved. err=-3
+[W1007 11:48:08.892801346 socket.cpp:207] [c10d] The hostname of the client socket cannot be retrieved. err=-3
+[smoke-train] starting | step 0/200 | params 7,309,568 (non-embedding 3,115,264) | world 2 | accum 4 | Tesla T4
+[smoke-train] step 10/200 | loss 8.9705 | lr 5.00e-04 | gnorm 1.293 | 154,180 tok/s | mfu 5.9% | eta 0.02h
+[smoke-train] step 20/200 | loss 7.8889 | lr 1.00e-03 | gnorm 1.234 | 179,487 tok/s | mfu 6.9% | eta 0.02h
+[smoke-train] step 30/200 | loss 7.3949 | lr 9.94e-04 | gnorm 0.654 | 178,543 tok/s | mfu 6.9% | eta 0.02h
+[smoke-train] step 40/200 | loss 7.1858 | lr 9.75e-04 | gnorm 0.388 | 177,318 tok/s | mfu 6.8% | eta 0.02h
+[smoke-train] step 50/200 | loss 6.9999 | lr 9.44e-04 | gnorm 0.618 | 176,163 tok/s | mfu 6.8% | eta 0.02h
+[smoke-train] step 50 | val loss 6.9958
+[smoke-train] step 60/200 | loss 6.8359 | lr 9.00e-04 | gnorm 0.628 | 156,524 tok/s | mfu 6.0% | eta 0.02h
+[smoke-train] step 70/200 | loss 6.6511 | lr 8.45e-04 | gnorm 0.359 | 173,234 tok/s | mfu 6.7% | eta 0.01h
+[smoke-train] step 80/200 | loss 6.5544 | lr 7.82e-04 | gnorm 0.390 | 170,672 tok/s | mfu 6.6% | eta 0.01h
+[smoke-train] step 90/200 | loss 6.4800 | lr 7.11e-04 | gnorm 0.282 | 168,736 tok/s | mfu 6.5% | eta 0.01h
+[smoke-train] step 100/200 | loss 6.3904 | lr 6.36e-04 | gnorm 0.608 | 166,433 tok/s | mfu 6.4% | eta 0.01h
+[smoke-train] step 100 | val loss 6.3718
+[smoke-train] pausing at step 100 (stop_after_steps); checkpoint saved
+
+*****************************************
+Setting OMP_NUM_THREADS environment variable for each process to be 1 in default, to avoid your system being overloaded, please further tune the variable for optimal performance in your application as needed. 
+*****************************************
+[W1007 11:49:18.200650195 socket.cpp:207] [c10d] The hostname of the client socket cannot be retrieved. err=-3
+[W1007 11:49:21.640184748 socket.cpp:207] [c10d] The hostname of the client socket cannot be retrieved. err=-3
+[W1007 11:49:21.713057553 socket.cpp:207] [c10d] The hostname of the client socket cannot be retrieved. err=-3
+[smoke-train] resuming from step_0000100 | step 100/200 | params 7,309,568 (non-embedding 3,115,264) | world 2 | accum 4 | Tesla T4
+[smoke-train] step 110/200 | loss 6.3376 | lr 5.58e-04 | gnorm 0.345 | 155,884 tok/s | mfu 6.0% | eta 0.01h
+[smoke-train] step 120/200 | loss 6.2321 | lr 4.80e-04 | gnorm 0.455 | 178,488 tok/s | mfu 6.9% | eta 0.01h
+[smoke-train] step 130/200 | loss 6.2017 | lr 4.03e-04 | gnorm 0.345 | 177,327 tok/s | mfu 6.8% | eta 0.01h
+[smoke-train] step 140/200 | loss 6.1765 | lr 3.32e-04 | gnorm 0.307 | 176,233 tok/s | mfu 6.8% | eta 0.01h
+[smoke-train] step 150/200 | loss 6.1415 | lr 2.67e-04 | gnorm 0.288 | 174,777 tok/s | mfu 6.7% | eta 0.01h
+[smoke-train] step 150 | val loss 6.1136
+[smoke-train] step 160/200 | loss 6.0814 | lr 2.10e-04 | gnorm 0.324 | 154,716 tok/s | mfu 6.0% | eta 0.00h
+[smoke-train] step 170/200 | loss 6.0628 | lr 1.64e-04 | gnorm 0.382 | 170,300 tok/s | mfu 6.6% | eta 0.00h
+[smoke-train] step 180/200 | loss 6.0440 | lr 1.30e-04 | gnorm 0.352 | 167,205 tok/s | mfu 6.4% | eta 0.00h
+[smoke-train] step 190/200 | loss 6.0504 | lr 1.08e-04 | gnorm 0.290 | 165,253 tok/s | mfu 6.4% | eta 0.00h
+[smoke-train] step 200/200 | loss 6.0148 | lr 1.00e-04 | gnorm 0.406 | 167,152 tok/s | mfu 6.4% | eta 0.00h
+[smoke-train] final val loss 6.0176  ppl 410.60  bpb 1.9867
+[smoke-train] hellaswag skipped: <HTTPError 404: 'Not Found'>
