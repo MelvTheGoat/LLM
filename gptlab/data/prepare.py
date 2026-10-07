@@ -92,7 +92,7 @@ def _process_batch(texts: list[str]) -> list[tuple]:
     """Clean, hash and (in the token pass) tokenize a batch of documents.
 
     Returns one tuple per document:
-    (digest, reason, raw_chars, changed, clean_text_or_None, ids_or_None, n_bytes)
+    (digest, reason, raw_chars, changed, clean_text_or_None, ids_or_None, n_bytes, n_chars)
     Clean text is only returned when it is needed: for rejected documents (for
     examples in the log) and in the tokenizer pass.
     """
@@ -106,9 +106,10 @@ def _process_batch(texts: list[str]) -> list[tuple]:
         if reason is None:
             kept_idx.append(len(out))
             kept_text.append(text)
-            out.append([digest, None, len(raw), changed, None if tok else text, None, len(text.encode("utf-8"))])
+            out.append([digest, None, len(raw), changed, None if tok else text, None, len(text.encode("utf-8")),
+                        len(text)])
         else:
-            out.append([digest, reason, len(raw), changed, text, None, 0])
+            out.append([digest, reason, len(raw), changed, text, None, 0, len(text)])
     if tok is not None and kept_text:
         for i, ids in zip(kept_idx, tok.encode_batch(kept_text)):
             out[i][5] = np.asarray(ids, dtype=np.uint16)
@@ -187,7 +188,7 @@ def _tokenizer_pass(source, cfg, log):
     dedup = Deduper()
     stats = CleaningStats()
     last = time.time()
-    for digest, reason, raw_chars, changed, text, _, _ in _processed(source, cfg, None):
+    for digest, reason, raw_chars, changed, text, _, _, _ in _processed(source, cfg, None):
         if time.time() - last > 60:
             last = time.time()
             log(f"tokenizer sample: {chars:,} / {tcfg.train_chars:,} chars ({stats.docs_in:,} docs read)")
@@ -268,15 +269,15 @@ def _token_pass(source, cfg, tokenizer_path, tok, out_dir: Path, log):
     stats = CleaningStats()
     eot = np.array([tok.eot_id], dtype=np.uint16)
     t0 = last = time.time()
-    for digest, reason, raw_chars, changed, text, ids, n_bytes in _processed(source, cfg, str(tokenizer_path)):
+    for digest, reason, raw_chars, changed, text, ids, n_bytes, n_chars in _processed(source, cfg, str(tokenizer_path)):
         stats.add_input(raw_chars, changed)
         if reason is not None:
             stats.add_removed(reason, text)
             continue
         if dedup.is_duplicate(digest):
-            stats.add_removed("exact_duplicate", f"[{len(ids)} tokens]")
+            stats.add_removed("exact_duplicate", f"[{len(ids)} tokens]", chars=n_chars)
             continue
-        stats.add_kept(n_bytes)
+        stats.add_kept(n_chars)
         split = "val" if is_val(digest, cfg.val_fraction) else "train"
         writer = val if split == "val" else train
         if split == "val" and val.total_tokens >= cfg.max_val_tokens:

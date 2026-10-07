@@ -114,9 +114,10 @@ class CleaningStats:
         self.docs_kept += 1
         self.chars_kept += chars
 
-    def add_removed(self, reason: str, text: str) -> None:
+    def add_removed(self, reason: str, text: str, chars: int | None = None) -> None:
+        """`chars` is the document's length when `text` is only a short stand-in for it."""
         self.removed_docs[reason] = self.removed_docs.get(reason, 0) + 1
-        self.removed_chars[reason] = self.removed_chars.get(reason, 0) + len(text)
+        self.removed_chars[reason] = self.removed_chars.get(reason, 0) + (len(text) if chars is None else chars)
         ex = self.examples.setdefault(reason, [])
         if len(ex) < self.max_examples:
             ex.append(text[:300])
