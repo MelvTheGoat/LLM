@@ -1,0 +1,41 @@
+# Experiment D (efficiency): speed questions the smoke benchmark did not cover.
+# The smoke benchmark (results/smoke-2/bench) already has every size with and
+# without torch.compile on 2 GPUs, fp32 vs fp16, and 1 vs 2 GPUs for s4 (eager).
+name: bench-efficiency
+base_model:
+  vocab_size: 16384
+  seq_len: 1024
+  pos_encoding: rope
+  norm: rmsnorm
+  mlp: swiglu
+  tie_weights: true
+models:                      # the scaling ladder (same as configs/bench/smoke.yaml)
+  s1: {d_model: 128, n_layer: 4, n_head: 2}
+  s2: {d_model: 256, n_layer: 6, n_head: 4}
+  s3: {d_model: 384, n_layer: 8, n_head: 6}
+  s4: {d_model: 512, n_layer: 8, n_head: 8}
+  s5: {d_model: 640, n_layer: 10, n_head: 10}
+  s6: {d_model: 768, n_layer: 12, n_head: 12}
+grid:
+  # How well does DDP scale from 1 to 2 GPUs, by model size? (compiled, fp16)
+  - model: [s1, s2, s3, s4, s5, s6]
+    precision: fp16
+    compile: true
+    world_size: 1
+  # Micro-batch size at a fixed model: does a bigger batch per forward pass help?
+  - model: s4
+    precision: fp16
+    compile: true
+    micro_batch_size: [4, 8, 16, 32]
+  # The largest model ran with micro-batch 8 (chosen without compile). Does 16 fit and help?
+  - model: s6
+    precision: fp16
+    compile: true
+    micro_batch_size: 16
+  # fp32 with compile, to separate the fp16 gain from the compile gain.
+  - model: s4
+    precision: fp32
+    compile: true
+warmup_steps: 3
+timed_steps: 10
+max_micro_batch: 64
