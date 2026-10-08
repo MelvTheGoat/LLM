@@ -3,6 +3,7 @@ from contextlib import nullcontext
 from pathlib import Path
 
 import numpy as np
+import pytest
 import torch
 import torch.nn.functional as F
 
@@ -96,3 +97,20 @@ def test_generate_is_reproducible_with_a_seed():
     b = generate(model, idx, 40, generator=torch.Generator().manual_seed(1))
     assert a.shape == (1, 43) and torch.equal(a, b)
     assert torch.equal(a[:, :3], idx) and int(a.max()) < 50
+
+
+def test_parquet_download_format_converts_to_the_same_examples(tmp_path, small_tokenizer):
+    # The Hugging Face copy stores labels as strings; render() must give the same result.
+    import pyarrow as pa
+    import pyarrow.parquet as pq
+
+    from gptlab.hellaswag import parquet_to_jsonl
+
+    examples = load_examples(HS)
+    rows = [dict(ex, label=str(ex["label"])) for ex in examples]
+    pq.write_table(pa.Table.from_pylist(rows), tmp_path / "val.parquet")
+    out = parquet_to_jsonl(tmp_path / "val.parquet", tmp_path / "val.jsonl", expect_rows=len(rows))
+    back = load_examples(out)
+    assert [render(ex, small_tokenizer) for ex in back] == [render(ex, small_tokenizer) for ex in examples]
+    with pytest.raises(ValueError):
+        parquet_to_jsonl(tmp_path / "val.parquet", tmp_path / "bad.jsonl", expect_rows=len(rows) + 1)

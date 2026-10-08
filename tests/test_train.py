@@ -193,3 +193,33 @@ def test_ddp_two_processes_match_one_process(tiny_data, tmp_path):
         assert sa == sb and abs(la - lb) < 1e-4
     ev = json.loads((tmp_path / "ddp" / "events.jsonl").read_text().splitlines()[0])
     assert ev["world_size"] == 2 and ev["accum"] == 1
+
+
+@pytest.mark.slow
+def test_compiled_ddp_with_accumulation_and_resume(tiny_data, tmp_path):
+    """The real runs use torch.compile + DDP + accumulation + resume; check that mix on CPU."""
+    cfg = tiny_cfg(max_steps=6, global_batch_tokens=256, compile=True)
+    cfg.model.dropout = 0.0
+    cfg_path = tmp_path / "cfg.yaml"
+    from gptlab.config import save_config
+
+    save_config(cfg, cfg_path)
+    env = dict(os.environ, OMP_NUM_THREADS="1", PYTHONPATH=str(ROOT))
+    base = [
+        sys.executable, "-m", "torch.distributed.run", "--nproc_per_node=2", "--master_port", "0",
+        "-m", "gptlab.train", "--config", str(cfg_path), "--out-dir", str(tmp_path / "ddp"),
+        "--data-dir", str(tiny_data), "--device", "cpu", "--hellaswag-path", str(HS),
+    ]
+    for extra in (["--stop-after-steps", "3"], []):  # stop halfway, then resume
+        base[5] = str(_free_port())
+        p = subprocess.run(base + extra, env=env, cwd=ROOT, capture_output=True, text=True, timeout=900)
+        assert p.returncode == 0, p.stderr[-3000:]
+    cfg.train.compile = False
+    run(cfg, tmp_path / "single", tiny_data)
+    ddp, single = losses(tmp_path / "ddp"), losses(tmp_path / "single")
+    assert [s for s, _ in ddp] == [s for s, _ in single] == list(range(1, 7))
+    for (_, la), (_, lb) in zip(ddp, single):
+        assert abs(la - lb) < 1e-3
+    events = [json.loads(line) for line in (tmp_path / "ddp" / "events.jsonl").read_text().splitlines()]
+    assert events[0]["accum"] == 2 and events[-1]["event"] == "training_done"
+    assert (tmp_path / "ddp" / "final_eval.json").exists()

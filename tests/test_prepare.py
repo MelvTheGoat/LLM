@@ -65,6 +65,12 @@ def test_manifest_counts_add_up(prepared):
     assert m["splits"]["train"]["docs"] + m["splits"]["val"]["docs"] == c["docs_kept"]
     assert [r["vocab_size"] for r in m["vocab_comparison"]] == [300, 400]
     assert m["tokenizer"]["vocab_size"] == 400
+    # Character counts are characters, not UTF-8 bytes (most sample docs are not pure ASCII).
+    assert c["chars_kept"] == sum(len(normalize(d)) for d in sample_docs)
+    assert c["removed_chars"]["exact_duplicate"] == len(normalize(sample_docs[3])) + len(normalize(sample_docs[10]))
+    assert m["splits"]["train"]["text_bytes"] + m["splits"]["val"]["text_bytes"] == sum(
+        len(normalize(d).encode("utf-8")) for d in sample_docs
+    )
 
 
 def test_shards_decode_to_the_cleaned_documents(prepared):

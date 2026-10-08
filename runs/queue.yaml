@@ -30,4 +30,87 @@ jobs:
     hardware: cpu
     max_hours: 8
 
-  # Experiments are added here after the smoke test (see EXPERIMENTS.md).
+  # ---- Experiments (plan and budget: EXPERIMENTS.md) ----
+  # Stage 1: speed questions and learning-rate sweeps (~4.5 GPU hours in all).
+
+  # D. Efficiency benchmark (~20 min). Needs no dataset, so it can run first.
+  - name: bench-efficiency
+    kind: bench
+    config: configs/bench/efficiency.yaml
+    hardware: gpu
+    max_hours: 1
+
+  # A. Learning-rate sweeps on s1, s2, s3 at 20 tokens per parameter.
+  #    About 6 min per s1 run, 16 min per s2 run, 1 hour per s3 run.
+  - name: s1-lr1e-3
+    kind: train
+    config: configs/exp/s1-lr1e-3.yaml
+    hardware: gpu
+    after: [data-fineweb-edu-16k]
+    max_hours: 0.75
+  - name: s1-lr2e-3
+    kind: train
+    config: configs/exp/s1-lr2e-3.yaml
+    hardware: gpu
+    after: [data-fineweb-edu-16k]
+    max_hours: 0.75
+  - name: s1-lr4e-3
+    kind: train
+    config: configs/exp/s1-lr4e-3.yaml
+    hardware: gpu
+    after: [data-fineweb-edu-16k]
+    max_hours: 0.75
+  - name: s1-lr8e-3
+    kind: train
+    config: configs/exp/s1-lr8e-3.yaml
+    hardware: gpu
+    after: [data-fineweb-edu-16k]
+    max_hours: 0.75
+  - name: s1-lr1.6e-2
+    kind: train
+    config: configs/exp/s1-lr1.6e-2.yaml
+    hardware: gpu
+    after: [data-fineweb-edu-16k]
+    max_hours: 0.75
+  - name: s2-lr1e-3
+    kind: train
+    config: configs/exp/s2-lr1e-3.yaml
+    hardware: gpu
+    after: [data-fineweb-edu-16k]
+    max_hours: 1
+  - name: s2-lr2e-3
+    kind: train
+    config: configs/exp/s2-lr2e-3.yaml
+    hardware: gpu
+    after: [data-fineweb-edu-16k]
+    max_hours: 1
+  - name: s2-lr4e-3
+    kind: train
+    config: configs/exp/s2-lr4e-3.yaml
+    hardware: gpu
+    after: [data-fineweb-edu-16k]
+    max_hours: 1
+  - name: s2-lr8e-3
+    kind: train
+    config: configs/exp/s2-lr8e-3.yaml
+    hardware: gpu
+    after: [data-fineweb-edu-16k]
+    max_hours: 1
+  - name: s3-lr1e-3
+    kind: train
+    config: configs/exp/s3-lr1e-3.yaml
+    hardware: gpu
+    after: [data-fineweb-edu-16k]
+    max_hours: 2.5
+  - name: s3-lr2e-3
+    kind: train
+    config: configs/exp/s3-lr2e-3.yaml
+    hardware: gpu
+    after: [data-fineweb-edu-16k]
+    max_hours: 2.5
+  - name: s3-lr4e-3
+    kind: train
+    config: configs/exp/s3-lr4e-3.yaml
+    hardware: gpu
+    after: [data-fineweb-edu-16k]
+    max_hours: 2.5

@@ -13,20 +13,26 @@ Random guessing scores 25%. We follow the prompt format of EleutherAI's
 lm-evaluation-harness ("<activity label>: <context>", then " <ending>", with the
 same text cleanup), so our numbers are comparable to numbers made with it.
 We use the 10,042-example validation set (the test labels are not public).
+It is downloaded from the Hugging Face copy of the dataset at a fixed revision,
+so every run scores the same examples.
 """
 
 from __future__ import annotations
 
 import json
 import re
-import urllib.request
+import tempfile
 from pathlib import Path
 
 import torch
 
 from gptlab import distributed as du
 
-VAL_URL = "https://raw.githubusercontent.com/rowanz/hellaswag/master/data/hellaswag_val.jsonl"
+# The original GitHub file is gone (404), so we use the Hugging Face copy.
+HF_REPO = "Rowan/hellaswag"
+HF_FILE = "data/validation-00000-of-00001.parquet"
+HF_REVISION = "218ec52e09a7e7462a5400043bb9a69a41d06b76"
+N_VAL = 10042
 
 
 def preprocess(text: str) -> str:
@@ -42,13 +48,31 @@ def load_examples(path: str | Path, limit: int | None = None) -> list[dict]:
     return rows[:limit] if limit else rows
 
 
+def parquet_to_jsonl(parquet_path: str | Path, out_path: str | Path, expect_rows: int | None = None) -> Path:
+    import pyarrow.parquet as pq
+
+    rows = pq.read_table(parquet_path).to_pylist()
+    if expect_rows is not None and len(rows) != expect_rows:
+        raise ValueError(f"expected {expect_rows} HellaSwag examples, got {len(rows)}")
+    out_path = Path(out_path)
+    tmp = out_path.with_suffix(".tmp")
+    with open(tmp, "w", encoding="utf-8") as f:
+        for r in rows:
+            f.write(json.dumps(r, ensure_ascii=False) + "\n")
+    tmp.replace(out_path)
+    return out_path
+
+
 def ensure_file(path: str | Path) -> Path:
+    """Download the validation set to `path` (as JSON lines) if it is not there yet."""
     path = Path(path)
     if not path.exists():
+        from huggingface_hub import hf_hub_download
+
         path.parent.mkdir(parents=True, exist_ok=True)
-        tmp = path.with_suffix(".tmp")
-        urllib.request.urlretrieve(VAL_URL, tmp)
-        tmp.replace(path)
+        with tempfile.TemporaryDirectory(dir=path.parent) as tmp:
+            pq_path = hf_hub_download(HF_REPO, HF_FILE, repo_type="dataset", revision=HF_REVISION, local_dir=tmp)
+            parquet_to_jsonl(pq_path, path, expect_rows=N_VAL)
     return path
 
 
