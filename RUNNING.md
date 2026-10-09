@@ -121,6 +121,7 @@ code, you will be told to merge first.
 
 | What you see | What it means / what to do |
 | --- | --- |
+| `FileNotFoundError: ... 'nvidia-smi'` on a CPU session | Your notebook has an older copy of the code cell. Replace the line `run(["nvidia-smi"])` with the two lines from `kaggle/runner.ipynb` (or delete it). |
 | `Secret GH_TOKEN is missing` | Add the secret under Add-ons → Secrets and tick it for this notebook. |
 | `GH_TOKEN is not set` or `git push` fails with 403 | The GitHub token expired or lacks *Contents: Read and write* on this repo. Make a new one. |
 | A job shows `running` but no session is running | That session was killed (for example stopped by hand or out of quota). After 30 minutes without a heartbeat, the next run picks the job up again and resumes from the last checkpoint. |

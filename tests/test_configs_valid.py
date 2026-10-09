@@ -73,3 +73,12 @@ def test_queue_jobs_point_to_configs_that_load():
             assert cfg.model.vocab_size == 16384 and cfg.data.name == "fineweb-edu-16k"
         if job.kind == "bench":
             assert load_bench_config(ROOT / job.config).all_cases()
+
+
+def test_kaggle_notebook_works_without_a_gpu():
+    import json
+
+    nb = json.loads((ROOT / "kaggle" / "runner.ipynb").read_text())
+    code = "".join(c for cell in nb["cells"] if cell["cell_type"] == "code" for c in cell["source"])
+    # CPU sessions have no nvidia-smi; calling it unguarded crashes the notebook before the runner starts.
+    assert 'if shutil.which("nvidia-smi"):' in code
